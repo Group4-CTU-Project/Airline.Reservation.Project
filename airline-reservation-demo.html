@@ -6,19 +6,20 @@
 <title>Cloud Nine Airline Reservations</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #1E3A5F;
-    --bg: #EAF4FB;
+    --ink: #0A2540;
+    --brand: #0E7C5D;
+    --brand-dark: #0A5C45;
+    --bg: #F3F7FC;
     --surface: #FFFFFF;
-    --accent: #FF6F91;
-    --accent-dark: #E14C72;
-    --gold: #FFC845;
-    --teal: #4FB6E8;
-    --text: #33415C;
-    --text-soft: #6B7690;
-    --border: #D7E6F0;
+    --gold: #F5A623;
+    --gold-dark: #B4720B;
+    --success: #1E8E5A;
+    --text: #1F2A3C;
+    --text-soft: #64748B;
+    --border: #DCE6F2;
   }
   * { box-sizing: border-box; }
   body {
@@ -28,10 +29,40 @@
     background: var(--bg);
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, .wordmark { font-family: 'Fredoka', sans-serif; color: var(--ink); }
+  h1, h2, h3 { font-family: 'Poppins', sans-serif; color: var(--ink); font-weight: 700; }
   a { color: inherit; }
-  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
   code { background: #EEF0F3; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+
+  /* ---- Logo lockup ---- */
+  .wordmark {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+  }
+  .wordmark .divider {
+    width: 1px;
+    height: 28px;
+    background: var(--border);
+  }
+  .wordmark .brandName {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 1.28rem;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  .wordmark .brandTag {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
 
   /* ---- Promo strip ---- */
   .promo {
@@ -47,7 +78,7 @@
     display: inline-block; margin-left: 10px; padding: 3px 12px; border-radius: 999px;
     background: var(--ink); color: #fff; text-decoration: none; font-weight: 700;
   }
-  .promo a:hover { background: var(--accent-dark); }
+  .promo a:hover { background: var(--brand-dark); }
 
   /* ---- Nav ---- */
   nav {
@@ -60,10 +91,9 @@
     justify-content: space-between;
     padding: 16px 0;
   }
-  .wordmark { display: flex; align-items: center; gap: 8px; font-size: 1.5rem; font-weight: 600; text-decoration: none; }
   .navLinks { display: flex; gap: 28px; list-style: none; margin: 0; padding: 0; }
-  .navLinks a { text-decoration: none; font-size: 0.92rem; font-weight: 500; color: var(--text); }
-  .navLinks a:hover { color: var(--accent-dark); }
+  .navLinks a { text-decoration: none; font-size: 0.92rem; font-weight: 600; color: var(--text); }
+  .navLinks a:hover { color: var(--brand); }
   .navRight { display: flex; align-items: center; gap: 14px; font-size: 0.9rem; }
   .btn {
     display: inline-block;
@@ -71,14 +101,13 @@
     border-radius: 7px;
     padding: 10px 18px;
     font-family: 'Nunito', sans-serif;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 0.92rem;
     cursor: pointer;
     text-decoration: none;
   }
-  .btn-primary { background: var(--accent); color: #fff; transition: transform 0.15s ease, background 0.15s ease; }
-  .btn-primary:hover { transform: translateY(-2px); }
-  .btn-primary:hover { background: var(--accent-dark); }
+  .btn-primary { background: var(--brand); color: #fff; transition: transform 0.15s ease, background 0.15s ease; }
+  .btn-primary:hover { transform: translateY(-2px); background: var(--brand-dark); }
   .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--border); }
   .btn-ghost:hover { border-color: var(--ink); }
   .btn:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -88,52 +117,73 @@
     .navLinks { display: none; }
   }
 
-  /* ---- Hero ---- */
+  /* ---- Hero (full-bleed photo with overlaid search widget) ---- */
   .hero {
-    display: grid;
-    grid-template-columns: 1.05fr 0.95fr;
-    gap: 48px;
-    align-items: center;
-    padding: 56px 0 64px;
+    position: relative;
+    overflow: hidden;
+    padding: 72px 0 48px;
+    color: #fff;
   }
-  @media (max-width: 900px) {
-    .hero { grid-template-columns: 1fr; padding: 36px 0 40px; }
-    .heroArt { order: -1; max-height: 220px; }
+  .heroBg {
+    position: absolute;
+    inset: -4%;
+    background-image: url('https://images.unsplash.com/photo-1619941400844-ec5ef7495cb8?w=1600&q=80&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    filter: saturate(1.2) contrast(1.05) brightness(1.02);
+    animation: heroZoom 30s ease-in-out infinite alternate;
+    z-index: 0;
   }
-  .eyebrow-free { font-size: 1rem; color: var(--ink); font-weight: 800; margin: 0 0 10px; }
-  .heroHeadline { font-size: 3rem; line-height: 1.1; margin: 0 0 16px; font-weight: 600; }
-  .heroSub { font-family: 'Nunito', sans-serif; font-size: 1.15rem; font-weight: 600; color: var(--ink); max-width: 460px; margin: 0 0 32px; line-height: 1.6; }
-  .planeFly { animation: planeTakeoff 3.6s ease-in-out infinite; transform-origin: 250px 150px; }
-  @keyframes planeTakeoff {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(10px, -14px); }
+  .heroOverlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(6,22,41,0.35) 0%, rgba(6,22,41,0.15) 42%, rgba(6,22,41,0.75) 100%);
+    z-index: 1;
   }
-  .skyTop { animation: skyTopShift 16s ease-in-out infinite; }
-  @keyframes skyTopShift {
-    0%, 100% { stop-color: #4FB6E8; }
-    50% { stop-color: #7B6BB0; }
+  @keyframes heroZoom {
+    0% { transform: scale(1) translateX(0); }
+    100% { transform: scale(1.14) translateX(-2.5%); }
   }
-  .skyBottom { animation: skyBottomShift 16s ease-in-out infinite; }
-  @keyframes skyBottomShift {
-    0%, 100% { stop-color: #FFE3C2; }
-    50% { stop-color: #FF9D6B; }
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
   }
-  .sun { animation: sunCycle 16s ease-in-out infinite; transform-origin: 70px 78px; }
-  @keyframes sunCycle {
-    0%, 100% { fill: #FFC845; transform: translateY(0); }
-    50% { fill: #FF7A45; transform: translateY(18px); }
+  .heroInner { position: relative; z-index: 2; max-width: 800px; margin: 0 auto; text-align: center; }
+  .heroInner > * { animation: fadeSlideUp 0.85s ease both; }
+  .heroInner .eyebrow-free { animation-delay: 0.05s; }
+  .heroInner .heroHeadline { animation-delay: 0.18s; }
+  .heroInner .heroSub { animation-delay: 0.3s; }
+  .heroInner .tripTabs { animation-delay: 0.42s; }
+  .heroInner .searchCard { animation-delay: 0.54s; }
+  @media (prefers-reduced-motion: reduce) {
+    .heroBg { animation: none; }
+    .heroInner > * { animation: none; opacity: 1; transform: none; }
   }
+  .eyebrow-free { font-size: 0.82rem; color: var(--gold); font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 12px; }
+  .heroHeadline { font-size: 2.9rem; line-height: 1.12; margin: 0 0 14px; color: #fff; }
+  .heroSub { font-family: 'Nunito', sans-serif; font-size: 1.08rem; font-weight: 600; color: rgba(255,255,255,0.88); max-width: 540px; margin: 0 auto 28px; line-height: 1.6; }
+
+  .tripTabs {
+    display: inline-flex; background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 999px; padding: 4px; margin-bottom: 16px;
+  }
+  .tripTabs button {
+    border: none; background: transparent; color: #fff; font-family: 'Nunito', sans-serif;
+    font-weight: 700; font-size: 0.82rem; padding: 8px 20px; border-radius: 999px; cursor: pointer;
+  }
+  .tripTabs button.active { background: #fff; color: var(--ink); }
 
   .searchCard {
     background: var(--surface);
-    border: 1px solid var(--border);
     border-radius: 14px;
     padding: 24px;
-    box-shadow: 0 12px 30px -18px rgba(28,43,74,0.25);
+    text-align: left;
+    box-shadow: 0 28px 56px -24px rgba(4,16,32,0.55);
   }
-  .searchGrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-  @media (max-width: 560px) { .searchGrid { grid-template-columns: 1fr; } }
-  .field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-soft); margin-bottom: 6px; }
+  .searchGrid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+  .searchGrid.oneway { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 560px) { .searchGrid, .searchGrid.oneway { grid-template-columns: 1fr; } }
+  .field label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-soft); margin-bottom: 6px; }
   .field input {
     width: 100%;
     padding: 11px 12px;
@@ -143,16 +193,13 @@
     font-size: 0.95rem;
     background: var(--bg);
   }
-  .field input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+  .field input:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
   .searchCard .btn { margin-top: 16px; }
-
-  /* ---- Hero art (SVG) ---- */
-  .heroArt { width: 100%; height: auto; }
 
   /* ---- Sections ---- */
   section { padding: 44px 0; }
   .sectionHead { margin-bottom: 24px; }
-  .sectionHead h2 { font-size: 1.8rem; font-weight: 600; margin: 0 0 6px; }
+  .sectionHead h2 { font-size: 1.7rem; margin: 0 0 6px; }
   .sectionHead p { color: var(--text-soft); margin: 0; font-size: 0.95rem; }
 
   /* ---- Flight results ---- */
@@ -166,16 +213,28 @@
     overflow: hidden;
     transition: transform 0.18s ease, box-shadow 0.18s ease;
   }
-  .flightCard:hover { transform: translateY(-4px); box-shadow: 0 16px 28px -16px rgba(30,58,95,0.28); }
+  .flightCard:hover { transform: translateY(-4px); box-shadow: 0 16px 28px -16px rgba(10,37,64,0.28); }
+  .flightCard { position: relative; }
   .flightCard .art { height: 110px; position: relative; overflow: hidden; }
-  .flightCard .art svg { width: 100%; height: 100%; display: block; }
+  .flightCard .art svg,
+  .flightCard .art img { width: 100%; height: 100%; display: block; object-fit: cover; }
+  .flightCard .dealBadge {
+    position: absolute; top: 10px; left: 10px; z-index: 2;
+    background: var(--gold); color: var(--ink); font-size: 0.72rem; font-weight: 800;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: 0.02em;
+    box-shadow: 0 4px 10px -4px rgba(0,0,0,0.35);
+  }
   .flightCard .body { padding: 16px; }
   .flightCard .route { font-weight: 700; font-size: 1rem; color: var(--ink); }
   .flightCard .meta { font-size: 0.85rem; color: var(--text-soft); margin-top: 4px; }
-  .flightCard .price { font-weight: 700; font-size: 1.15rem; margin-top: 12px; color: var(--accent-dark); }
+  .flightCard .priceRow { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; }
+  .flightCard .price { font-weight: 800; font-size: 1.15rem; color: var(--brand-dark); }
+  .flightCard .priceUnit { font-size: 0.78rem; color: var(--text-soft); font-weight: 600; }
+  .flightCard .priceWas { font-size: 0.85rem; color: var(--text-soft); text-decoration: line-through; }
+  .flightCard .priceSave { font-size: 0.76rem; font-weight: 700; color: var(--gold-dark); margin-top: 2px; }
   .flightCard .seats {
     display: inline-block; font-size: 0.75rem; font-weight: 700; margin-top: 8px;
-    padding: 3px 10px; border-radius: 999px; background: #FFF1E9; color: var(--accent-dark);
+    padding: 3px 10px; border-radius: 999px; background: #FDF1DC; color: var(--gold-dark);
   }
   .flightCard .seats.plenty { background: #E6F7EE; color: #1E8E5A; }
 
@@ -186,12 +245,12 @@
     background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
     padding: 22px; transition: transform 0.18s ease, box-shadow 0.18s ease;
   }
-  .feature:hover { transform: translateY(-4px); box-shadow: 0 16px 28px -18px rgba(30,58,95,0.25); }
+  .feature:hover { transform: translateY(-4px); box-shadow: 0 16px 28px -18px rgba(10,37,64,0.25); }
   .feature .badge {
     width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center;
     justify-content: center; margin-bottom: 14px;
   }
-  .feature h3 { font-size: 1.05rem; margin: 0 0 8px; font-weight: 600; font-family: 'Nunito', sans-serif; color: var(--ink); }
+  .feature h3 { font-size: 1.05rem; margin: 0 0 8px; font-weight: 700; font-family: 'Poppins', sans-serif; color: var(--ink); }
   .feature p { margin: 0; font-size: 0.92rem; color: var(--text-soft); line-height: 1.5; }
 
   /* ---- Account section ---- */
@@ -205,15 +264,15 @@
     background: var(--bg);
   }
   .panel h2 { font-size: 1.1rem; margin: 0 0 4px; }
-  .panel label { display: block; margin-top: 14px; font-weight: 600; font-size: 0.85rem; color: var(--text); }
+  .panel label { display: block; margin-top: 14px; font-weight: 700; font-size: 0.85rem; color: var(--text); }
   .panel input {
     width: 100%; padding: 10px; margin-top: 6px; border: 1px solid var(--border);
     border-radius: 7px; box-sizing: border-box; font-family: inherit; background: #fff;
   }
   .policy-list { font-size: 0.76rem; color: var(--text-soft); margin: 8px 0 0; padding-left: 18px; }
-  .policy-list li.ok { color: var(--teal); font-weight: 600; }
+  .policy-list li.ok { color: var(--success); font-weight: 700; }
   .error { color: #B00020; font-size: 0.85rem; margin-top: 10px; white-space: pre-line; }
-  .success { color: var(--teal); font-size: 0.9rem; margin-top: 10px; }
+  .success { color: var(--success); font-size: 0.9rem; margin-top: 10px; }
   .hint { font-size: 0.8rem; color: var(--text-soft); }
   .hidden { display: none !important; }
   .setup-warning {
@@ -221,11 +280,97 @@
     font-size: 0.85rem; color: #6B4A16;
   }
   .adminNote {
-    margin-top: 14px; padding: 12px 14px; background: #EAF6F4;
-    border: 1px solid var(--teal); border-radius: 8px; font-size: 0.88rem; color: var(--ink);
+    margin-top: 14px; padding: 12px 14px; background: #E6F7F0;
+    border: 1px solid var(--brand); border-radius: 8px; font-size: 0.88rem; color: var(--ink);
   }
 
+  /* ---- S1-09: My trips ---- */
+  .tripCard {
+    border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px;
+    background: #fff; margin-top: 12px; display: flex; justify-content: space-between;
+    align-items: flex-start; gap: 16px; flex-wrap: wrap;
+  }
+  .tripCard .route { font-weight: 700; color: var(--ink); font-size: 1.02rem; }
+  .tripCard .when { color: var(--text-soft); font-size: 0.85rem; margin-top: 3px; }
+  .tripCard .code { font-size: 0.78rem; color: var(--text-soft); margin-top: 8px; }
+  .tripCard .code strong { color: var(--ink); letter-spacing: 0.03em; }
+  .tripCard .passenger { font-size: 0.78rem; color: var(--text-soft); margin-top: 2px; }
+  .tripCard .right { text-align: right; }
+  .tripCard .fare { font-weight: 800; color: var(--brand-dark); font-size: 1.05rem; }
+  .statusPill {
+    display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 0.7rem;
+    font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px;
+  }
+  .statusPill.confirmed { background: #E6F7EE; color: #1E8E5A; }
+  .statusPill.pending { background: #FFF4E5; color: #B4720B; }
+  .statusPill.payment_failed { background: #FCE8E8; color: #B00020; }
+  .statusPill.cancelled { background: #EEF0F3; color: #64748B; }
+  .tripsEmpty { color: var(--text-soft); font-size: 0.9rem; padding: 6px 0 2px; }
+  .tripsLoading { color: var(--text-soft); font-size: 0.9rem; padding: 6px 0 2px; }
+
   footer { padding: 32px 0 48px; text-align: center; color: var(--text-soft); font-size: 0.82rem; }
+
+  /* ---- S1-06: Booking modal ---- */
+  .modalOverlay {
+    position: fixed; inset: 0; background: rgba(6,22,41,0.55);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; z-index: 100;
+  }
+  .modalCard {
+    background: var(--surface); border-radius: 14px; padding: 26px;
+    max-width: 420px; width: 100%; position: relative;
+    box-shadow: 0 30px 60px -20px rgba(6,22,41,0.55);
+  }
+  .modalClose {
+    position: absolute; top: 12px; right: 14px; background: none; border: none;
+    font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--text-soft);
+  }
+  .modalClose:hover { color: var(--ink); }
+  .bookingSummary {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; margin: 14px 0 18px; font-size: 0.9rem;
+  }
+  .bookingSummary .route { font-weight: 700; color: var(--ink); }
+  .bookingSummary .when { color: var(--text-soft); margin-top: 2px; }
+  .bookingSummary .fare { font-weight: 800; color: var(--brand-dark); margin-top: 8px; }
+  .bookingSummary .fare .priceUnit { font-weight: 600; color: var(--text-soft); font-size: 0.8rem; }
+
+  /* ---- S1-09: Ticket / receipt ---- */
+  #ticketModal .modalCard { max-width: 480px; }
+  .ticket {
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #fff;
+  }
+  .ticket .ticketHead {
+    background: var(--ink); color: #fff; padding: 18px 20px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .ticket .ticketHead .brand { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 0.95rem; }
+  .ticket .ticketHead .code { text-align: right; }
+  .ticket .ticketHead .code .label { font-size: 0.68rem; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: 0.06em; }
+  .ticket .ticketHead .code .value { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 1.15rem; letter-spacing: 0.03em; }
+  .ticket .ticketBody { padding: 20px; }
+  .ticket .passengerRow { margin-bottom: 16px; }
+  .ticket .passengerRow .label { font-size: 0.7rem; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.05em; }
+  .ticket .passengerRow .value { font-weight: 700; color: var(--ink); font-size: 1rem; }
+  .ticket .legBlock {
+    border-top: 1px dashed var(--border); padding-top: 14px; margin-top: 14px;
+  }
+  .ticket .legBlock:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+  .ticket .legBlock .legLabel { font-size: 0.7rem; font-weight: 800; color: var(--brand-dark); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .ticket .legBlock .route { font-weight: 700; color: var(--ink); font-size: 1.02rem; }
+  .ticket .legBlock .when { color: var(--text-soft); font-size: 0.88rem; margin-top: 2px; }
+  .ticket .receiptBlock { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 14px; }
+  .ticket .receiptRow { display: flex; justify-content: space-between; font-size: 0.88rem; margin-top: 4px; color: var(--text); }
+  .ticket .receiptRow.total { font-weight: 800; color: var(--brand-dark); font-size: 1rem; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .ticket .footNote { text-align: center; font-size: 0.72rem; color: var(--text-soft); padding: 12px 20px 18px; }
+
+  @media print {
+    body * { visibility: hidden; }
+    #ticketModal, #ticketModal * { visibility: visible; }
+    #ticketModal { position: absolute; inset: 0; background: #fff; padding: 0; }
+    #ticketModal .modalClose, #ticketPrintBtn { display: none; }
+    #ticketModal .modalCard { box-shadow: none; max-width: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -242,25 +387,27 @@
   <nav>
     <div class="wrap navRow">
       <a href="#top" class="wordmark">
-        <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
-          <circle cx="17" cy="17" r="17" fill="var(--accent)" />
-          <g transform="translate(17,17) rotate(-25)">
-            <rect x="-11" y="-4" width="19" height="8" rx="4" fill="#fff" />
-            <path d="M-3 3 L-9 11 L-4 11 L1 4 Z" fill="#fff" />
-            <path d="M-3 -3 L-9 -11 L-4 -11 L1 -4 Z" fill="#fff" />
-            <path d="M6 3 L10 7 L12 5.5 L8.5 2 Z" fill="#fff" />
-            <circle cx="-4" cy="0" r="1.4" fill="var(--accent)" />
-          </g>
+        <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+          <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#0A2540" />
+              <stop offset="100%" stop-color="#123A66" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="36" height="36" rx="9" fill="url(#logoGrad)" />
+          <path d="M18 7 L20 15.5 L28.5 19 L28.5 21 L20 19.2 L20 25.5 L23.5 28 L23.5 29.6 L18 28.2 L12.5 29.6 L12.5 28 L16 25.5 L16 19.2 L7.5 21 L7.5 19 L16 15.5 Z" fill="#F5A623" />
         </svg>
-        <span style="display:flex; flex-direction:column; line-height:1.15;">
-          <span>Cloud Nine</span>
-          <span style="font-size:0.62rem; font-weight:700; letter-spacing:0.09em; color:var(--text-soft); text-transform:uppercase;">Airline Reservations</span>
+        <span class="divider"></span>
+        <span style="display:flex; flex-direction:column;">
+          <span class="brandName">Cloud Nine</span>
+          <span class="brandTag">Airline Reservations</span>
         </span>
       </a>
       <ul class="navLinks">
         <li><a href="#search">Flights</a></li>
         <li><a href="#results">Destinations</a></li>
-        <li><a href="#account">Manage trip</a></li>
+        <li><a href="#trips">My Trips</a></li>
+        <li><a href="#account">Account</a></li>
       </ul>
       <div class="navRight">
         <span id="headerSignedOut">
@@ -274,137 +421,47 @@
     </div>
   </nav>
 
-  <div class="wrap">
-    <section class="hero" id="top">
-      <div>
-        <p class="eyebrow-free">Welcome aboard</p>
-        <h1 class="heroHeadline">
-          Let's find your happy place.
-        </h1>
-        <p class="heroSub">Search nonstop and connecting flights nationwide — clear pricing, real seat counts, and a warm welcome from search to landing.</p>
+  <section class="hero" id="top" role="img" aria-label="Airplane flying beneath a sky full of white clouds">
+    <div class="heroBg"></div>
+    <div class="heroOverlay"></div>
+    <div class="wrap heroInner">
+      <p class="eyebrow-free">Book with confidence</p>
+      <h1 class="heroHeadline">Let's find your happy place.</h1>
+      <p class="heroSub">Search nonstop and connecting flights nationwide — clear pricing, real seat counts, and a warm welcome from search to landing.</p>
 
-        <div class="searchCard" id="search">
-          <form id="searchForm">
-            <div class="searchGrid">
-              <div class="field">
-                <label for="searchOrigin">From</label>
-                <input type="text" id="searchOrigin" placeholder="JFK" required />
-              </div>
-              <div class="field">
-                <label for="searchDestination">To</label>
-                <input type="text" id="searchDestination" placeholder="LAX" required />
-              </div>
-              <div class="field">
-                <label for="searchDate">Depart</label>
-                <input type="date" id="searchDate" required />
-              </div>
+      <div class="tripTabs" id="tripTabs">
+        <button type="button" class="active" data-trip="roundtrip">Round-trip</button>
+        <button type="button" data-trip="oneway">One-way</button>
+      </div>
+
+      <div class="searchCard" id="search">
+        <form id="searchForm">
+          <div class="searchGrid" id="searchGrid">
+            <div class="field">
+              <label for="searchOrigin">From</label>
+              <input type="text" id="searchOrigin" placeholder="JFK" required />
             </div>
-            <button type="submit" id="searchBtn" class="btn btn-primary btn-block">Search flights</button>
-          </form>
-          <div class="error" id="searchError"></div>
-        </div>
+            <div class="field">
+              <label for="searchDestination">To</label>
+              <input type="text" id="searchDestination" placeholder="LAX" required />
+            </div>
+            <div class="field">
+              <label for="searchDate">Depart</label>
+              <input type="date" id="searchDate" required />
+            </div>
+            <div class="field" id="searchReturnField">
+              <label for="searchReturnDate">Return</label>
+              <input type="date" id="searchReturnDate" required />
+            </div>
+          </div>
+          <button type="submit" id="searchBtn" class="btn btn-primary btn-block">Search flights</button>
+        </form>
+        <div class="error" id="searchError"></div>
       </div>
+    </div>
+  </section>
 
-      <div class="heroArt">
-        <svg viewBox="0 0 480 420" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-              <stop class="skyTop" offset="0%" stop-color="#4FB6E8" />
-              <stop offset="65%" stop-color="#8FD3F0" />
-              <stop class="skyBottom" offset="100%" stop-color="#FFE3C2" />
-            </linearGradient>
-          </defs>
-          <rect x="0" y="0" width="480" height="420" rx="20" fill="url(#sky)" />
-
-          <circle class="sun" cx="70" cy="78" r="40" fill="#FFC845" opacity="0.95" />
-
-          <g fill="#FFFFFF" opacity="0.9">
-            <ellipse cx="165" cy="60" rx="42" ry="16" />
-            <ellipse cx="195" cy="50" rx="28" ry="13" />
-            <ellipse cx="135" cy="50" rx="24" ry="11" />
-          </g>
-          <g fill="#FFFFFF" opacity="0.85">
-            <ellipse cx="380" cy="230" rx="36" ry="14" />
-            <ellipse cx="405" cy="222" rx="22" ry="10" />
-          </g>
-
-          <!-- City skyline -->
-          <g fill="#1E3A5F" opacity="0.75">
-            <rect x="0" y="340" width="34" height="60" />
-            <rect x="38" y="316" width="28" height="84" />
-            <rect x="70" y="352" width="24" height="48" />
-            <rect x="98" y="300" width="30" height="100" />
-            <rect x="132" y="330" width="26" height="70" />
-            <rect x="362" y="336" width="26" height="64" />
-            <rect x="392" y="308" width="30" height="92" />
-            <rect x="426" y="344" width="24" height="56" />
-            <rect x="454" y="322" width="26" height="78" />
-          </g>
-          <g fill="#FFC845" opacity="0.55">
-            <rect x="6" y="352" width="5" height="5" />
-            <rect x="18" y="366" width="5" height="5" />
-            <rect x="46" y="330" width="5" height="5" />
-            <rect x="46" y="350" width="5" height="5" />
-            <rect x="58" y="340" width="5" height="5" />
-            <rect x="106" y="316" width="5" height="5" />
-            <rect x="106" y="340" width="5" height="5" />
-            <rect x="118" y="330" width="5" height="5" />
-            <rect x="400" y="324" width="5" height="5" />
-            <rect x="400" y="346" width="5" height="5" />
-            <rect x="434" y="360" width="5" height="5" />
-            <rect x="462" y="338" width="5" height="5" />
-          </g>
-
-          <path d="M0 330 Q120 300 240 322 T480 320 L480 420 L0 420 Z" fill="#FFFFFF" opacity="0.35" />
-          <path d="M0 360 Q140 340 260 356 T480 352 L480 420 L0 420 Z" fill="#FFFFFF" opacity="0.55" />
-
-          <!-- Birds -->
-          <g stroke="#1E3A5F" stroke-width="2.2" fill="none" stroke-linecap="round" class="birds">
-            <path class="bird" d="M100 90 q6 -8 12 0 q6 -8 12 0" />
-            <path class="bird" d="M160 60 q5 -7 10 0 q5 -7 10 0" />
-            <path class="bird" d="M330 110 q5 -7 10 0 q5 -7 10 0" />
-          </g>
-
-          <!-- Motion trail -->
-          <g stroke="#FFFFFF" stroke-width="4" fill="none" opacity="0.6" stroke-linecap="round">
-            <line x1="20" y1="240" x2="200" y2="165" />
-            <line x1="35" y1="262" x2="208" y2="182" />
-          </g>
-
-          <!-- Plane -->
-          <g class="planeFly">
-          <g transform="translate(250,150) rotate(-28)">
-            <!-- horizontal stabilizer -->
-            <path d="M-55 8 L-78 24 L-58 11 Z" fill="#1E3A5F" />
-            <!-- vertical tail fin -->
-            <path d="M-52 -10 L-70 -40 L-46 -14 Z" fill="#E14C72" />
-            <!-- wing (back layer) -->
-            <path d="M-4 9 L-30 50 L2 40 L18 11 Z" fill="#1E3A5F" />
-            <!-- fuselage -->
-            <path d="M72 0 L48 -12 L-52 -12 L-70 -4 L-70 4 L-52 12 L48 12 Z" fill="#FFFFFF" stroke="#1E3A5F" stroke-width="2.5" stroke-linejoin="round" />
-            <!-- wing (front layer, over fuselage) -->
-            <path d="M0 11 L-20 48 L4 38 L22 13 Z" fill="#FF6F91" />
-            <!-- engine -->
-            <rect x="-16" y="14" width="20" height="11" rx="3" fill="#4FB6E8" stroke="#1E3A5F" stroke-width="1.5" />
-            <!-- cockpit window -->
-            <path d="M48 -8 L62 -3 L62 3 L48 8 Z" fill="#4FB6E8" opacity="0.85" />
-            <!-- windows row -->
-            <rect x="-46" y="-5.5" width="6" height="5" rx="1" fill="#4FB6E8" />
-            <rect x="-34" y="-5.5" width="6" height="5" rx="1" fill="#4FB6E8" />
-            <rect x="-22" y="-5.5" width="6" height="5" rx="1" fill="#4FB6E8" />
-            <rect x="-10" y="-5.5" width="6" height="5" rx="1" fill="#4FB6E8" />
-            <!-- passenger window with a happy face enroute -->
-            <circle cx="10" cy="-3" r="7" fill="#FFC845" stroke="#1E3A5F" stroke-width="1.5" />
-            <circle cx="10" cy="-3" r="4.6" fill="#FFE9B8" />
-            <circle cx="8" cy="-4" r="0.9" fill="#1E3A5F" />
-            <circle cx="12" cy="-4" r="0.9" fill="#1E3A5F" />
-            <path d="M7.5 -1.5 Q10 1 12.5 -1.5" stroke="#1E3A5F" stroke-width="1" fill="none" stroke-linecap="round" />
-          </g>
-          </g>
-        </svg>
-      </div>
-    </section>
-
+  <div class="wrap">
     <section id="results">
       <div class="sectionHead">
         <h2>Search results</h2>
@@ -419,22 +476,22 @@
       </div>
       <div class="features">
         <div class="feature">
-          <div class="badge" style="background:#EAF4FB;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 17h16M4 17l2-8h12l2 8M9 9V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4" stroke="#4FB6E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="badge" style="background:#E6F7F0;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 17h16M4 17l2-8h12l2 8M9 9V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4" stroke="#0E7C5D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <h3>Real seat counts</h3>
           <p>Every search checks live availability, so the seats you see are the seats you can actually book.</p>
         </div>
         <div class="feature">
-          <div class="badge" style="background:#FFF1E9;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M4 7l8-5 8 5M4 17l8 5 8-5" stroke="#FF6F91" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="badge" style="background:#FDF1DC;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M4 7l8-5 8 5M4 17l8 5 8-5" stroke="#B4720B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <h3>Straightforward pricing</h3>
           <p>The fare you search is the fare you pay — no surprise fees added at checkout.</p>
         </div>
         <div class="feature">
-          <div class="badge" style="background:#FFF7E2;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#FFC845" stroke-width="2"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7" stroke="#FFC845" stroke-width="2" stroke-linecap="round"/></svg>
+          <div class="badge" style="background:#EDF2F9;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#0A2540" stroke-width="2"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7" stroke="#0A2540" stroke-width="2" stroke-linecap="round"/></svg>
           </div>
           <h3>Manage it all in one place</h3>
           <p>Create an account once to search, book, and track every trip going forward.</p>
@@ -447,7 +504,7 @@
     <div class="wrap">
       <section id="account">
         <div class="sectionHead">
-          <h2>Manage your trip</h2>
+          <h2>Account</h2>
           <p>Welcome! Create an account or sign in to book and track your reservations.</p>
         </div>
 
@@ -456,6 +513,8 @@
             <div class="panel">
               <h2>Create account</h2>
               <form id="registerForm">
+                <label for="regFullName">Full name</label>
+                <input type="text" id="regFullName" required autocomplete="name" />
                 <label for="regEmail">Email</label>
                 <input type="email" id="regEmail" required autocomplete="email" />
                 <label for="regPassword">Password</label>
@@ -489,14 +548,65 @@
 
         <div id="loggedInView" class="hidden">
           <div class="panel" style="max-width:480px;">
-            <h2>Welcome back</h2>
+            <h2>Your profile</h2>
             <p style="margin:6px 0 0;">Signed in as <strong id="userEmail"></strong></p>
             <p style="margin:4px 0 0;">Role: <strong id="userRole">customer</strong></p>
             <div id="adminOnlyPanel" class="adminNote hidden">
               🔐 <span id="adminNoteText">This content only loads for the admin role.</span>
             </div>
+
+            <h3 style="margin:20px 0 0; padding-top:16px; border-top:1px solid var(--border); font-size:0.95rem;">Personal info</h3>
+            <form id="profileForm">
+              <label for="profileFullName">Full name</label>
+              <input type="text" id="profileFullName" required autocomplete="name" />
+              <button type="submit" id="profileSaveBtn" class="btn btn-primary btn-block" style="margin-top:14px;">Save changes</button>
+              <div class="error" id="profileError"></div>
+              <div class="success" id="profileSuccess"></div>
+            </form>
+
+            <h3 style="margin:20px 0 0; padding-top:16px; border-top:1px solid var(--border); font-size:0.95rem;">Payment method</h3>
+            <p class="hint" style="margin:4px 0 12px;">We never store your full card number or CVC — only the last 4 digits and an encrypted token, same as real payment processors.</p>
+            <div id="paymentOnFile" class="adminNote hidden" style="border-color:var(--border); background:var(--bg);"></div>
+            <form id="paymentForm">
+              <label for="cardNumber">Card number</label>
+              <input type="text" id="cardNumber" inputmode="numeric" autocomplete="off" placeholder="4242 4242 4242 4242" maxlength="19" />
+              <div style="display:flex; gap:10px; margin-top:14px;">
+                <div style="flex:1;">
+                  <label for="cardExpiry">Expiry (MM/YY)</label>
+                  <input type="text" id="cardExpiry" autocomplete="off" placeholder="MM/YY" maxlength="5" />
+                </div>
+                <div style="flex:1;">
+                  <label for="cardCvc">CVC</label>
+                  <input type="text" id="cardCvc" inputmode="numeric" autocomplete="off" placeholder="123" maxlength="4" />
+                </div>
+              </div>
+              <button type="submit" id="paymentSaveBtn" class="btn btn-primary btn-block" style="margin-top:14px;">Save payment method</button>
+              <div class="error" id="paymentError"></div>
+              <div class="success" id="paymentSuccess"></div>
+            </form>
+
             <button id="logoutBtn" class="btn btn-ghost" style="margin-top:16px;">Log out</button>
           </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="accountSection" id="tripsSectionWrap">
+    <div class="wrap">
+      <section id="trips">
+        <div class="sectionHead">
+          <h2>My trips</h2>
+          <p>Your reservations, most recent first.</p>
+        </div>
+
+        <div id="tripsLoggedOut" class="panel" style="max-width:480px;">
+          <p style="margin:0;">Please <a href="#account">sign in</a> to view your trips.</p>
+        </div>
+
+        <div id="tripsLoggedIn" class="hidden">
+          <div id="myTripsList"></div>
+          <div class="error" id="myTripsError"></div>
         </div>
       </section>
     </div>
@@ -505,6 +615,73 @@
   <footer class="wrap">
     Cloud Nine Airline Reservations — a Sprint 1 demo project.
   </footer>
+
+  <div id="bookingModal" class="modalOverlay hidden">
+    <div class="modalCard">
+      <button type="button" id="bookingClose" class="modalClose" aria-label="Close">&times;</button>
+      <h2 style="margin:0 0 4px;">Confirm your booking</h2>
+      <p style="margin:0; color:var(--text-soft); font-size:0.9rem;">Review the details, then confirm to hold your reservation.</p>
+
+      <div class="bookingSummary" id="bookingSummary"></div>
+
+      <div id="returnFlightStep" class="hidden">
+        <h3 style="margin:14px 0 8px; font-size:0.95rem;">Your return flight</h3>
+        <p id="returnFlightLoading" class="hint" style="margin:0 0 8px;">Finding your return flight…</p>
+        <div class="bookingSummary hidden" id="returnFlightDetails" style="margin-top:0;"></div>
+        <div class="error" id="returnFlightError"></div>
+        <button type="button" id="confirmReturnBtn" class="btn btn-primary btn-block hidden" style="margin-top:14px;">Confirm return flight</button>
+      </div>
+
+      <form id="bookingForm" autocomplete="off" class="hidden">
+        <label for="passengerName" style="display:block; font-weight:700; font-size:0.85rem; margin-bottom:6px;">Passenger full name</label>
+        <input type="text" id="passengerName" name="pax-full-name" required autocomplete="off" placeholder="Full name as shown on ID" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:7px; font-family:inherit; margin-bottom:14px;" />
+
+        <label for="passengerEmail" style="display:block; font-weight:700; font-size:0.85rem; margin-bottom:6px;">Passenger email</label>
+        <input type="email" id="passengerEmail" name="pax-email-addr" required autocomplete="off" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:7px; font-family:inherit;" />
+
+        <button type="submit" id="bookingSubmitBtn" class="btn btn-primary btn-block" style="margin-top:18px;">Confirm reservation</button>
+      </form>
+
+      <form id="paymentStepForm" class="hidden" autocomplete="off">
+        <p class="hint" style="margin:0 0 14px;">Seat held — enter payment to complete your booking. We never store your full card number or CVC, only the last 4 digits and an encrypted token.</p>
+
+        <label for="payCardholderName" style="display:block; font-weight:700; font-size:0.85rem; margin-bottom:6px;">Cardholder name</label>
+        <input type="text" id="payCardholderName" name="pay-cardholder" autocomplete="off" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:7px; font-family:inherit; margin-bottom:14px;" />
+
+        <label for="payCardNumber" style="display:block; font-weight:700; font-size:0.85rem; margin-bottom:6px;">Card number</label>
+        <input type="text" id="payCardNumber" name="pay-card-number" inputmode="numeric" autocomplete="off" placeholder="4242 4242 4242 4242" maxlength="19" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:7px; font-family:inherit; margin-bottom:14px;" />
+
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1;">
+            <label for="payCardExpiry" style="display:block; font-weight:700; font-size:0.85rem; margin-bottom:6px;">Expiry (MM/YY)</label>
+            <input type="text" id="payCardExpiry" name="pay-card-expiry" autocomplete="off" placeholder="MM/YY" maxlength="5" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:7px; font-family:inherit;" />
+          </div>
+          <div style="flex:1;">
+            <label for="payCardCvc" style="display:block; font-weight:700; font-size:0.85rem; margin-bottom:6px;">CVC</label>
+            <input type="text" id="payCardCvc" name="pay-card-cvc" inputmode="numeric" autocomplete="off" placeholder="123" maxlength="4" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:7px; font-family:inherit;" />
+          </div>
+        </div>
+
+        <label style="display:flex; align-items:center; gap:8px; margin-top:14px; font-weight:600; font-size:0.85rem; color:var(--text);">
+          <input type="checkbox" id="paySaveCard" style="width:auto; margin:0;" />
+          Save this card to my profile for future bookings
+        </label>
+
+        <button type="submit" id="paySubmitBtn" class="btn btn-primary btn-block" style="margin-top:16px;">Pay now</button>
+      </form>
+
+      <div class="error" id="bookingError"></div>
+      <div class="success" id="bookingSuccess"></div>
+    </div>
+  </div>
+
+  <div id="ticketModal" class="modalOverlay hidden">
+    <div class="modalCard">
+      <button type="button" id="ticketClose" class="modalClose" aria-label="Close">&times;</button>
+      <div class="ticket" id="ticketContent"></div>
+      <button type="button" id="ticketPrintBtn" class="btn btn-primary btn-block" style="margin-top:16px;">Print / Save as PDF</button>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
@@ -527,6 +704,7 @@
     const FLIGHTS_CONFIG = {
       table: 'flights',
       columns: {
+        id: 'flight_id',
         origin: 'origin',
         destination: 'destination',
         departureTime: 'departure_time',
@@ -558,37 +736,71 @@
     const headerSignedIn = document.getElementById('headerSignedIn');
     const headerEmail = document.getElementById('headerEmail');
 
-    // ---- Small SVG plane icon reused on each flight card ----
-    function flightArt(seed) {
-      const palettes = [
-        ['#4FB6E8', '#1E3A5F'],
-        ['#FF6F91', '#E14C72'],
-        ['#FFC845', '#FF6F91'],
-        ['#1E3A5F', '#4FB6E8'],
-      ];
-      const hash = Math.abs(Array.from(seed).reduce((a, c) => a + c.charCodeAt(0), 0));
-      const [c1, c2] = palettes[hash % palettes.length];
-      return `
-        <svg viewBox="0 0 300 110" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="g${seed}" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="${c1}" />
-              <stop offset="100%" stop-color="${c2}" />
-            </linearGradient>
-          </defs>
-          <rect width="300" height="110" fill="url(#g${seed})" />
-          <circle cx="250" cy="30" r="18" fill="#fff" opacity="0.25" />
-          <path d="M20 80 L280 80" stroke="#fff" stroke-width="1" opacity="0.3" />
-          <g transform="translate(150,55) rotate(-10)">
-            <path d="M-38 -3 L-48 -14 L-42 -4 Z" fill="#fff" opacity="0.85" />
-            <path d="M-4 7 L-22 26 L-10 22 L6 8 Z" fill="#fff" opacity="0.85" />
-            <rect x="-40" y="-9" width="72" height="18" rx="9" fill="#fff" opacity="0.95" />
-            <path d="M30 -9 Q40 0 30 9 Z" fill="#fff" opacity="0.95" />
-            <circle cx="-22" cy="0" r="2.6" fill="${c1}" opacity="0.7" />
-            <circle cx="-10" cy="0" r="2.6" fill="${c1}" opacity="0.7" />
-          </g>
-        </svg>
-      `;
+    // ---- S1-06: Booking/passenger form + Reservation Service ----
+    // Tracks who's signed in (needed to attach reservations to a user_id)
+    // and which flight the booking modal is currently open for.
+    let currentUser = null;
+    let currentUserFullName = '';
+    let currentBookingFlight = null;
+    let currentReturnFlight = null;
+    let currentExpectedPrice = null;
+    let currentReservation = null;
+
+    // ---- Trip-type tabs ----
+    // Round-trip fares are shown at a realistic multiplier of the one-way
+    // fare stored in the database (not simply 2x — round-trip tickets are
+    // usually cheaper per-leg than two one-ways). Switching tabs re-renders
+    // whatever results are already on screen, no new search needed.
+    const ROUND_TRIP_MULTIPLIER = 1.85;
+    let tripType = 'roundtrip';
+    let lastFlights = [];
+    let lastReturnDate = null;
+    let lastTrips = [];
+
+    document.querySelectorAll('#tripTabs button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#tripTabs button').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        tripType = btn.dataset.trip;
+        toggleReturnDateField();
+        if (lastFlights.length) {
+          document.getElementById('flightResults').innerHTML = lastFlights.map(renderFlightCard).join('');
+        }
+      });
+    });
+
+    // ---- Return date field only applies to round-trip searches ----
+    function toggleReturnDateField() {
+      const grid = document.getElementById('searchGrid');
+      const returnField = document.getElementById('searchReturnField');
+      const returnInput = document.getElementById('searchReturnDate');
+      const isRoundTrip = tripType === 'roundtrip';
+      grid.classList.toggle('oneway', !isRoundTrip);
+      returnField.classList.toggle('hidden', !isRoundTrip);
+      returnInput.required = isRoundTrip;
+      if (!isRoundTrip) returnInput.setCustomValidity('');
+    }
+    toggleReturnDateField();
+
+    // ---- Real photo of the actual destination city ----
+    // Keyed by airport code so the photo genuinely represents where the
+    // flight is going, not just a themed placeholder. Falls back to a
+    // generic travel photo for any code not in the map.
+    const AIRPORT_PHOTOS = {
+      JFK: { url: 'https://images.unsplash.com/photo-1503572327579-b5c6afe5c5c5', alt: 'The Statue of Liberty, New York' },
+      LAX: { url: 'https://images.unsplash.com/photo-1581390114939-946f9a890a7f', alt: 'The Hollywood Sign, Los Angeles' },
+      DFW: { url: 'https://images.unsplash.com/photo-1646663497659-28eeae8ce6ea', alt: 'Dallas skyline' },
+      ATL: { url: 'https://images.unsplash.com/photo-1753744402410-44319f72f8c5', alt: 'Downtown Atlanta with the SkyView Ferris wheel' },
+      ORD: { url: 'https://images.unsplash.com/photo-1622180790662-cdb3cedaa463', alt: 'Cloud Gate ("The Bean") in Chicago\'s Millennium Park' },
+      MIA: { url: 'https://images.unsplash.com/photo-1759352642358-d4b1d10ed3dc', alt: 'South Beach, Miami' },
+      SFO: { url: 'https://images.unsplash.com/photo-1744142211084-7731fae94e9f', alt: 'The Golden Gate Bridge, San Francisco' },
+      SEA: { url: 'https://images.unsplash.com/photo-1751496631540-d8defbdf631d', alt: 'The Space Needle, Seattle' },
+    };
+    const FALLBACK_PHOTO = { url: 'https://images.unsplash.com/photo-1431162020154-5eb22b2456d6', alt: 'Destination photo' };
+
+    function flightArt(airportCode) {
+      const photo = AIRPORT_PHOTOS[(airportCode || '').toUpperCase()] || FALLBACK_PHOTO;
+      return `<img src="${photo.url}?w=600&q=80&auto=format&fit=crop" alt="${photo.alt}" loading="lazy" />`;
     }
 
     // -----------------------------------------------------------------------
@@ -606,11 +818,25 @@
       const origin = document.getElementById('searchOrigin').value.trim();
       const destination = document.getElementById('searchDestination').value.trim();
       const date = document.getElementById('searchDate').value;
+      const returnDate = tripType === 'roundtrip' ? document.getElementById('searchReturnDate').value : '';
 
       if (!origin || !destination || !date) {
         errorEl.textContent = 'Please fill in origin, destination, and date.';
         return;
       }
+
+      if (tripType === 'roundtrip') {
+        if (!returnDate) {
+          errorEl.textContent = 'Please choose a return date for your round-trip search.';
+          return;
+        }
+        if (returnDate <= date) {
+          errorEl.textContent = 'Return date must be after your departure date.';
+          return;
+        }
+      }
+
+      lastReturnDate = tripType === 'roundtrip' ? returnDate : null;
 
       const dayStart = `${date}T00:00:00`;
       const dayEnd = `${date}T23:59:59`;
@@ -637,10 +863,12 @@
         hintEl.textContent = `${origin} → ${destination} on ${date}`;
 
         if (!data || data.length === 0) {
+          lastFlights = [];
           resultsEl.innerHTML = '<p class="hint">No flights found for that route and date.</p>';
           return;
         }
 
+        lastFlights = data;
         resultsEl.innerHTML = data.map(renderFlightCard).join('');
         document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
       } finally {
@@ -648,33 +876,423 @@
       }
     });
 
+    // Computes the displayed fare, deal/discount, and trip label for a
+    // flight given the current trip-type tab. Shared by renderFlightCard and
+    // the booking modal so the price a customer books always matches what
+    // they saw on the card.
+    function getFareDetails(flight) {
+      const cols = FLIGHTS_CONFIG.columns;
+      const destination = flight[cols.destination];
+      const oneWayFare = Number(flight[cols.price]);
+      const seed = (destination || 'flight').replace(/[^a-zA-Z]/g, '');
+
+      // Fare stored in the DB is treated as the one-way price; round-trip
+      // applies the multiplier above.
+      const fareForTrip = tripType === 'roundtrip' ? oneWayFare * ROUND_TRIP_MULTIPLIER : oneWayFare;
+      const tripLabel = tripType === 'roundtrip' ? 'roundtrip' : 'one-way';
+
+      // ---- Deal highlighting ----
+      // Roughly half of routes are shown as a deal, chosen deterministically
+      // from the route (not randomly) so re-searching the same route always
+      // shows the same badge. Discount is 10–25% off the listed fare, shown
+      // as a struck-through "was" price.
+      const hash = Math.abs(Array.from(seed).reduce((a, c) => a + c.charCodeAt(0), 0));
+      const isDeal = hash % 2 === 0;
+      const discountPct = 10 + (hash % 4) * 5; // 10, 15, 20, or 25
+      const priceNum = fareForTrip;
+      const originalPrice = isDeal ? priceNum / (1 - discountPct / 100) : null;
+
+      return { seed, oneWayFare, fareForTrip, tripLabel, isDeal, discountPct, priceNum, originalPrice };
+    }
+
     function renderFlightCard(flight) {
       const cols = FLIGHTS_CONFIG.columns;
+      const flightId = flight[cols.id];
       const origin = flight[cols.origin];
       const destination = flight[cols.destination];
       const dep = new Date(flight[cols.departureTime]);
       const arr = new Date(flight[cols.arrivalTime]);
-      const price = flight[cols.price];
       const seatsAvailable = flight[cols.seatsAvailable];
       const airline = flight[cols.airline];
 
       const timeFmt = (d) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const seed = (destination || 'flight').replace(/[^a-zA-Z]/g, '');
       const seatsClass = (seatsAvailable != null && seatsAvailable > 9) ? 'seats plenty' : 'seats';
       const seatsLabel = seatsAvailable != null ? (seatsAvailable <= 5 ? `Only ${seatsAvailable} left` : `${seatsAvailable} seats left`) : 'Seats available';
 
+      const { priceNum, originalPrice, isDeal, discountPct, tripLabel } = getFareDetails(flight);
+
+      const dealBadgeHtml = isDeal ? `<div class="dealBadge">SAVE ${discountPct}%</div>` : '';
+      const priceHtml = isDeal
+        ? `
+          <div class="priceRow">
+            <span class="price">$${priceNum.toFixed(2)}</span>
+            <span class="priceWas">$${originalPrice.toFixed(2)}</span>
+            <span class="priceUnit">/ ${tripLabel}</span>
+          </div>
+          <div class="priceSave">You save $${(originalPrice - priceNum).toFixed(2)}</div>
+        `
+        : `<div class="priceRow"><span class="price">$${priceNum.toFixed(2)}</span><span class="priceUnit">/ ${tripLabel}</span></div>`;
+
       return `
         <div class="flightCard">
-          <div class="art">${flightArt(seed)}</div>
+          <div class="art">${dealBadgeHtml}${flightArt(destination)}</div>
           <div class="body">
             <div class="route">${origin} → ${destination}</div>
             <div class="meta">${airline || 'Cloud Nine'} · ${timeFmt(dep)} – ${timeFmt(arr)}</div>
-            <div class="price">$${Number(price).toFixed(2)}</div>
+            ${priceHtml}
             <div class="${seatsClass}">${seatsLabel}</div>
+            <button type="button" class="btn btn-primary btn-block bookBtn" data-flight-id="${flightId}" style="margin-top:12px;">Book this flight</button>
           </div>
         </div>
       `;
     }
+
+    // -----------------------------------------------------------------------
+    // S1-06: Booking/passenger form + Reservation Service
+    // -----------------------------------------------------------------------
+    const bookingModal = document.getElementById('bookingModal');
+    const bookingSummaryEl = document.getElementById('bookingSummary');
+    const bookingForm = document.getElementById('bookingForm');
+    const bookingErrorEl = document.getElementById('bookingError');
+    const bookingSuccessEl = document.getElementById('bookingSuccess');
+
+    // Event delegation: flight cards are re-rendered on every search/tab
+    // switch, so a single listener on the results container catches clicks
+    // on any "Book this flight" button, current or future.
+    document.getElementById('flightResults').addEventListener('click', (e) => {
+      const btn = e.target.closest('.bookBtn');
+      if (!btn) return;
+      const flightId = btn.dataset.flightId;
+      const flight = lastFlights.find((f) => String(f[FLIGHTS_CONFIG.columns.id]) === flightId);
+      if (flight) openBookingModal(flight);
+    });
+
+    function openBookingModal(flight) {
+      if (!currentUser) {
+        document.getElementById('account').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('loginError').textContent = 'Please log in to book a flight.';
+        return;
+      }
+
+      currentBookingFlight = flight;
+      currentReservation = null;
+      currentReturnFlight = null;
+      const cols = FLIGHTS_CONFIG.columns;
+      const { priceNum, tripLabel } = getFareDetails(flight);
+      currentExpectedPrice = priceNum;
+      const dep = new Date(flight[cols.departureTime]);
+
+      bookingSummaryEl.innerHTML = `
+        <div class="route">${flight[cols.origin]} → ${flight[cols.destination]}</div>
+        <div class="when">${dep.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</div>
+        <div class="fare">$${priceNum.toFixed(2)} <span class="priceUnit">/ ${tripLabel}</span></div>
+      `;
+
+      document.getElementById('passengerName').value = currentUserFullName || '';
+      document.getElementById('passengerEmail').value = currentUser.email || '';
+      bookingErrorEl.textContent = '';
+      bookingSuccessEl.textContent = '';
+      document.getElementById('paymentStepForm').classList.add('hidden');
+      bookingModal.classList.remove('hidden');
+
+      if (tripType === 'roundtrip' && lastReturnDate) {
+        bookingForm.classList.add('hidden');
+        openReturnFlightStep(flight);
+      } else {
+        document.getElementById('returnFlightStep').classList.add('hidden');
+        bookingForm.classList.remove('hidden');
+        document.getElementById('passengerName').focus();
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // Round-trip: pull the next available flight back before letting the
+    // user proceed. "Next" = earliest departure on or after the chosen
+    // return date on the reversed route — not necessarily on that exact
+    // date, so a sparse schedule still finds something.
+    // -----------------------------------------------------------------------
+    async function findReturnFlight(outboundFlight) {
+      const cols = FLIGHTS_CONFIG.columns;
+      const dayStart = `${lastReturnDate}T00:00:00`;
+      const { data, error } = await supabaseClient
+        .from(FLIGHTS_CONFIG.table)
+        .select('*')
+        .ilike(cols.origin, outboundFlight[cols.destination])
+        .ilike(cols.destination, outboundFlight[cols.origin])
+        .gte(cols.departureTime, dayStart)
+        .order(cols.departureTime, { ascending: true })
+        .limit(1);
+
+      if (error) {
+        console.error(error);
+        return { flight: null, error: true };
+      }
+      return { flight: (data && data[0]) || null, error: false };
+    }
+
+    async function openReturnFlightStep(outboundFlight) {
+      const stepEl = document.getElementById('returnFlightStep');
+      const loadingEl = document.getElementById('returnFlightLoading');
+      const detailsEl = document.getElementById('returnFlightDetails');
+      const errorEl = document.getElementById('returnFlightError');
+      const confirmBtn = document.getElementById('confirmReturnBtn');
+      const cols = FLIGHTS_CONFIG.columns;
+
+      stepEl.classList.remove('hidden');
+      loadingEl.classList.remove('hidden');
+      detailsEl.classList.add('hidden');
+      confirmBtn.classList.add('hidden');
+      errorEl.textContent = '';
+
+      const { flight, error } = await findReturnFlight(outboundFlight);
+      loadingEl.classList.add('hidden');
+
+      if (error) {
+        errorEl.textContent = 'Something went wrong finding your return flight. Please try again.';
+        return;
+      }
+      if (!flight) {
+        errorEl.textContent = `No return flights found on or after ${new Date(`${lastReturnDate}T00:00:00`).toLocaleDateString([], { dateStyle: 'medium' })}. Close this window and try a different return date.`;
+        return;
+      }
+
+      currentReturnFlight = flight;
+      const retDep = new Date(flight[cols.departureTime]);
+      const retFare = Number(flight[cols.price]);
+      detailsEl.classList.remove('hidden');
+      detailsEl.innerHTML = `
+        <div class="route">${flight[cols.origin]} → ${flight[cols.destination]}</div>
+        <div class="when">${retDep.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</div>
+        <div class="fare">$${retFare.toFixed(2)} <span class="priceUnit">/ one-way</span></div>
+      `;
+      confirmBtn.classList.remove('hidden');
+    }
+
+    document.getElementById('confirmReturnBtn').addEventListener('click', () => {
+      document.getElementById('returnFlightStep').classList.add('hidden');
+      bookingForm.classList.remove('hidden');
+      document.getElementById('passengerName').focus();
+    });
+
+    function closeBookingModal() {
+      bookingModal.classList.add('hidden');
+      currentBookingFlight = null;
+      currentReturnFlight = null;
+      currentExpectedPrice = null;
+      currentReservation = null;
+      document.getElementById('returnFlightStep').classList.add('hidden');
+    }
+
+    // Basic format check — this can't confirm the name matches a real ID,
+    // but it does catch the obvious cases: empty, single-word, or names
+    // containing numbers/symbols. Letters, spaces, hyphens, apostrophes, and
+    // periods are allowed (covers names like "Mary-Jane O'Neil" and
+    // "John S. Jane"), and at least two space-separated parts are required.
+    function isValidPassengerName(name) {
+      const pattern = /^[A-Za-z.'-]+(?:\s[A-Za-z.'-]+)+$/;
+      return pattern.test(name.trim());
+    }
+
+    document.getElementById('bookingClose').addEventListener('click', closeBookingModal);
+    bookingModal.addEventListener('click', (e) => {
+      if (e.target === bookingModal) closeBookingModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !bookingModal.classList.contains('hidden')) closeBookingModal();
+    });
+
+    bookingForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      bookingErrorEl.textContent = '';
+      bookingSuccessEl.textContent = '';
+
+      if (!currentUser || !currentBookingFlight) {
+        bookingErrorEl.textContent = 'Please log in and select a flight first.';
+        return;
+      }
+
+      const passengerName = document.getElementById('passengerName').value.trim();
+      const passengerEmail = document.getElementById('passengerEmail').value.trim();
+      if (!passengerName || !passengerEmail) {
+        bookingErrorEl.textContent = 'Please fill in passenger name and email.';
+        return;
+      }
+      if (!isValidPassengerName(passengerName)) {
+        bookingErrorEl.textContent = 'Please enter a valid full name (first and last name, letters only).';
+        return;
+      }
+
+      const cols = FLIGHTS_CONFIG.columns;
+
+      const btn = document.getElementById('bookingSubmitBtn');
+      btn.disabled = true;
+      try {
+        // S1-07: create_reservation() re-checks seat availability and the
+        // current fare inside a locked transaction, server-side — it does
+        // NOT trust currentExpectedPrice, it only compares against it so we
+        // can tell the user their price changed before anything is charged.
+        const { data, error } = await supabaseClient.rpc('create_reservation', {
+          p_flight_id: currentBookingFlight[cols.id],
+          p_passenger_name: passengerName,
+          p_passenger_email: passengerEmail,
+          p_trip_type: tripType,
+          p_expected_price: currentExpectedPrice,
+        });
+
+        if (error) {
+          const message = error.message || '';
+          if (message.includes('SOLD_OUT')) {
+            bookingErrorEl.textContent = 'This flight just sold out. Please close this window and search again.';
+            bookingForm.classList.add('hidden');
+            return;
+          }
+          const fareChangedMatch = message.match(/FARE_CHANGED:\s*([\d.]+)/);
+          if (fareChangedMatch) {
+            const newPrice = Number(fareChangedMatch[1]);
+            currentExpectedPrice = newPrice;
+            const tripLabel = tripType === 'roundtrip' ? 'roundtrip' : 'one-way';
+            bookingSummaryEl.querySelector('.fare').innerHTML =
+              `$${newPrice.toFixed(2)} <span class="priceUnit">/ ${tripLabel}</span>`;
+            bookingErrorEl.textContent = 'The fare for this flight just changed. Please review the updated price above and confirm again.';
+            return;
+          }
+          bookingErrorEl.textContent = 'Something went wrong creating your reservation. Please try again.';
+          console.error(error);
+          return;
+        }
+
+        const reservation = Array.isArray(data) ? data[0] : data;
+        currentReservation = reservation;
+
+        if (tripType === 'roundtrip' && currentReturnFlight) {
+          const cols = FLIGHTS_CONFIG.columns;
+          const { error: returnLegError } = await supabaseClient.rpc('set_reservation_return_leg', {
+            p_reservation_id: reservation.reservation_id,
+            p_return_date: lastReturnDate,
+            p_return_flight_id: currentReturnFlight[cols.id],
+          });
+          // Non-fatal: the outbound reservation is already held and the
+          // trip should still proceed to payment even if this side-record
+          // fails to save — surface it quietly rather than blocking checkout.
+          if (returnLegError) console.error('set_reservation_return_leg failed:', returnLegError);
+        }
+
+        bookingForm.classList.add('hidden');
+        openPaymentStep(reservation);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // -----------------------------------------------------------------------
+    // S1-08: Payment step — collects card details, calls process_payment(),
+    // which approves/declines and (on decline) releases the held seat.
+    // -----------------------------------------------------------------------
+    const paymentStepForm = document.getElementById('paymentStepForm');
+
+    function openPaymentStep(reservation) {
+      bookingSummaryEl.querySelector('.fare').innerHTML =
+        `$${Number(reservation.price_paid).toFixed(2)} due now`;
+      document.getElementById('payCardholderName').value = currentUserFullName || '';
+      document.getElementById('payCardNumber').value = '';
+      document.getElementById('payCardExpiry').value = '';
+      document.getElementById('payCardCvc').value = '';
+      document.getElementById('paySaveCard').checked = false;
+      bookingErrorEl.textContent = '';
+      bookingSuccessEl.textContent = 'Seat held! Enter payment below to confirm your booking.';
+      paymentStepForm.classList.remove('hidden');
+      document.getElementById('payCardNumber').focus();
+    }
+
+    paymentStepForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      bookingErrorEl.textContent = '';
+
+      if (!currentReservation) {
+        bookingErrorEl.textContent = 'No reservation found — please close this window and start again.';
+        return;
+      }
+
+      const cardNumber = document.getElementById('payCardNumber').value.trim();
+      const expiry = document.getElementById('payCardExpiry').value.trim();
+      const cvc = document.getElementById('payCardCvc').value.trim();
+      const saveCard = document.getElementById('paySaveCard').checked;
+      const digits = cardNumber.replace(/\D/g, '');
+
+      if (digits.length < 13 || digits.length > 19) {
+        bookingErrorEl.textContent = 'Please enter a valid card number.';
+        return;
+      }
+      if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+        bookingErrorEl.textContent = 'Please enter expiry as MM/YY.';
+        return;
+      }
+      if (!/^\d{3,4}$/.test(cvc)) {
+        bookingErrorEl.textContent = 'Please enter a valid CVC.';
+        return;
+      }
+
+      const last4 = digits.slice(-4);
+      const brand = deriveCardBrand(digits);
+      const mockToken = generateMockToken();
+
+      const btn = document.getElementById('paySubmitBtn');
+      btn.disabled = true;
+      try {
+        const { data, error } = await supabaseClient.rpc('process_payment', {
+          p_reservation_id: currentReservation.reservation_id,
+          p_card_brand: brand,
+          p_last4: last4,
+          p_mock_token: mockToken,
+          p_save_card: saveCard,
+        });
+
+        if (error) {
+          bookingErrorEl.textContent = 'Something went wrong processing payment. Please try again.';
+          console.error(error);
+          return;
+        }
+
+        const result = Array.isArray(data) ? data[0] : data;
+        const confirmationCode = currentReservation.reservation_id.slice(0, 8).toUpperCase();
+
+        if (result.approved) {
+          paymentStepForm.classList.add('hidden');
+          bookingSuccessEl.textContent = `Reservation confirmed! Confirmation #${confirmationCode} — ${result.message} See it anytime under My trips.`;
+          if (saveCard) await refreshPaymentOnFile();
+          await loadMyTrips();
+
+          const cols = FLIGHTS_CONFIG.columns;
+          openTicketModal({
+            confirmationCode,
+            passengerName: currentReservation.passenger_name || document.getElementById('passengerName').value,
+            pricePaid: Number(currentReservation.price_paid),
+            cardBrand: brand,
+            last4,
+            bookedAt: currentReservation.created_at || new Date().toISOString(),
+            outbound: {
+              origin: currentBookingFlight[cols.origin],
+              destination: currentBookingFlight[cols.destination],
+              departureTime: currentBookingFlight[cols.departureTime],
+              arrivalTime: currentBookingFlight[cols.arrivalTime],
+            },
+            returnLeg: currentReturnFlight ? {
+              origin: currentReturnFlight[cols.origin],
+              destination: currentReturnFlight[cols.destination],
+              departureTime: currentReturnFlight[cols.departureTime],
+              arrivalTime: currentReturnFlight[cols.arrivalTime],
+            } : null,
+          });
+        } else {
+          paymentStepForm.classList.add('hidden');
+          bookingErrorEl.textContent = `${result.message} Your seat was released — please search again to try booking.`;
+          bookingSuccessEl.textContent = '';
+          await loadMyTrips();
+        }
+      } finally {
+        btn.disabled = false;
+      }
+    });
 
     // -----------------------------------------------------------------------
     // S1-02: Password policy
@@ -710,8 +1328,14 @@
       successEl.textContent = '';
       if (!supabaseClient) { errorEl.textContent = 'Set up your Supabase keys first — see the warning above.'; return; }
 
+      const fullName = document.getElementById('regFullName').value.trim();
       const email = document.getElementById('regEmail').value.trim();
       const password = document.getElementById('regPassword').value;
+
+      if (!fullName) {
+        errorEl.textContent = 'Please enter your full name.';
+        return;
+      }
 
       if (!checkPasswordPolicy(password)) {
         errorEl.textContent = 'Password does not meet all requirements above.';
@@ -727,7 +1351,7 @@
           return;
         }
         if (data.user) {
-          await supabaseClient.from('profiles').upsert({ id: data.user.id, role: 'customer' });
+          await supabaseClient.from('profiles').upsert({ id: data.user.id, role: 'customer', full_name: fullName });
         }
         successEl.textContent = 'Account created! You can log in now (or check your email if confirmation is on).';
         e.target.reset();
@@ -738,22 +1362,34 @@
     });
 
     // -----------------------------------------------------------------------
-    // S1-03: Failed-login limiting (client-side demo version)
+    // S1-03: Failed-login limiting (database-enforced version)
+    //
+    // Backed by three Postgres functions (SECURITY DEFINER, granted to
+    // anon/authenticated): check_login_lock, record_failed_login,
+    // clear_login_attempts. State lives in the login_attempts table, keyed
+    // by email, so it persists across refreshes/devices/tabs instead of
+    // living in a JS object in this page.
     // -----------------------------------------------------------------------
-    const failedAttempts = {};
 
-    function getLockStatus(email) {
-      const entry = failedAttempts[email];
-      if (entry && entry.lockedUntil && entry.lockedUntil > Date.now()) return entry.lockedUntil;
-      return null;
+    // Returns a Date the account is locked until, or null if not locked.
+    async function getLockStatus(email) {
+      const { data, error } = await supabaseClient.rpc('check_login_lock', { p_email: email });
+      if (error) {
+        console.error('check_login_lock failed:', error);
+        return null; // fail open on the check itself; signInWithPassword is still the real gate
+      }
+      return data ? new Date(data) : null;
     }
-    function recordFailedAttempt(email) {
-      const entry = failedAttempts[email] || { count: 0, lockedUntil: null };
-      entry.count += 1;
-      if (entry.count >= MAX_FAILED_ATTEMPTS) entry.lockedUntil = Date.now() + LOCKOUT_MINUTES * 60 * 1000;
-      failedAttempts[email] = entry;
+
+    async function recordFailedAttempt(email) {
+      const { error } = await supabaseClient.rpc('record_failed_login', { p_email: email });
+      if (error) console.error('record_failed_login failed:', error);
     }
-    function clearFailedAttempts(email) { delete failedAttempts[email]; }
+
+    async function clearFailedAttempts(email) {
+      const { error } = await supabaseClient.rpc('clear_login_attempts', { p_email: email });
+      if (error) console.error('clear_login_attempts failed:', error);
+    }
 
     // ---- Login ----
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -765,26 +1401,26 @@
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
 
-      const lockedUntil = getLockStatus(email);
-      if (lockedUntil) {
-        const minutesLeft = Math.ceil((lockedUntil - Date.now()) / 60000);
-        errorEl.textContent = `Too many failed attempts. Try again in ${minutesLeft} minute(s).`;
-        return;
-      }
-
       const btn = document.getElementById('loginBtn');
       btn.disabled = true;
       try {
+        const lockedUntil = await getLockStatus(email);
+        if (lockedUntil) {
+          const minutesLeft = Math.max(1, Math.ceil((lockedUntil.getTime() - Date.now()) / 60000));
+          errorEl.textContent = `Too many failed attempts. Try again in ${minutesLeft} minute(s).`;
+          return;
+        }
+
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) {
-          recordFailedAttempt(email);
-          const stillLocked = getLockStatus(email);
+          await recordFailedAttempt(email);
+          const stillLocked = await getLockStatus(email);
           errorEl.textContent = stillLocked
             ? `Too many failed attempts. Account locked for ${LOCKOUT_MINUTES} minutes.`
             : error.message;
           return;
         }
-        clearFailedAttempts(email);
+        await clearFailedAttempts(email);
         showLoggedIn(data.user);
       } finally {
         btn.disabled = false;
@@ -797,14 +1433,114 @@
       showLoggedOut();
     }
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+    // ---- S1-08: save a payment method from the profile page ----
+    document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('paymentError');
+      const successEl = document.getElementById('paymentSuccess');
+      errorEl.textContent = '';
+      successEl.textContent = '';
+
+      if (!currentUser) {
+        errorEl.textContent = 'You need to be logged in to save a payment method.';
+        return;
+      }
+
+      const cardNumber = document.getElementById('cardNumber').value.trim();
+      const expiry = document.getElementById('cardExpiry').value.trim();
+      const cvc = document.getElementById('cardCvc').value.trim();
+      const digits = cardNumber.replace(/\D/g, '');
+
+      if (digits.length < 13 || digits.length > 19) {
+        errorEl.textContent = 'Please enter a valid card number.';
+        return;
+      }
+      if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+        errorEl.textContent = 'Please enter expiry as MM/YY.';
+        return;
+      }
+      if (!/^\d{3,4}$/.test(cvc)) {
+        errorEl.textContent = 'Please enter a valid CVC.';
+        return;
+      }
+
+      const last4 = digits.slice(-4);
+      const brand = deriveCardBrand(digits);
+      const mockToken = generateMockToken();
+
+      const btn = document.getElementById('paymentSaveBtn');
+      btn.disabled = true;
+      try {
+        const { error } = await supabaseClient.rpc('save_payment_method', {
+          p_card_brand: brand,
+          p_last4: last4,
+          p_token: mockToken,
+        });
+
+        if (error) {
+          errorEl.textContent = 'Something went wrong saving your payment method. Please try again.';
+          console.error(error);
+          return;
+        }
+
+        successEl.textContent = 'Payment method saved.';
+        document.getElementById('cardNumber').value = '';
+        document.getElementById('cardExpiry').value = '';
+        document.getElementById('cardCvc').value = '';
+        await refreshPaymentOnFile();
+      } finally {
+        btn.disabled = false;
+      }
+    });
     document.getElementById('headerLogout').addEventListener('click', (e) => { e.preventDefault(); handleLogout(); });
 
-    // ---- Role lookup ----
-    async function fetchRole(userId) {
-      if (!supabaseClient) return 'customer';
-      const { data, error } = await supabaseClient.from('profiles').select('role').eq('id', userId).maybeSingle();
-      if (error || !data) return 'customer';
-      return data.role || 'customer';
+    // ---- Edit profile (full name) ----
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('profileError');
+      const successEl = document.getElementById('profileSuccess');
+      errorEl.textContent = '';
+      successEl.textContent = '';
+
+      if (!currentUser) {
+        errorEl.textContent = 'You need to be logged in to update your profile.';
+        return;
+      }
+
+      const fullName = document.getElementById('profileFullName').value.trim();
+      if (!isValidPassengerName(fullName)) {
+        errorEl.textContent = 'Please enter a valid full name (first and last name, letters only).';
+        return;
+      }
+
+      const btn = document.getElementById('profileSaveBtn');
+      btn.disabled = true;
+      try {
+        const { error } = await supabaseClient
+          .from('profiles')
+          .update({ full_name: fullName })
+          .eq('id', currentUser.id);
+
+        if (error) {
+          errorEl.textContent = 'Something went wrong saving your profile. Please try again.';
+          console.error(error);
+          return;
+        }
+
+        currentUserFullName = fullName;
+        successEl.textContent = 'Profile updated.';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // ---- Profile lookup (role + full_name) ----
+    async function fetchProfile(userId) {
+      if (!supabaseClient) return { role: 'customer', full_name: null };
+      const { data, error } = await supabaseClient.from('profiles').select('role, full_name').eq('id', userId).maybeSingle();
+      if (error || !data) return { role: 'customer', full_name: null };
+      return { role: data.role || 'customer', full_name: data.full_name || null };
     }
 
     // ---- Real (database-enforced) role check ----
@@ -815,6 +1551,7 @@
     }
 
     async function showLoggedIn(user) {
+      currentUser = user;
       loggedOutView.classList.add('hidden');
       loggedInView.classList.remove('hidden');
       headerSignedOut.classList.add('hidden');
@@ -822,19 +1559,266 @@
       userEmailEl.textContent = user.email;
       headerEmail.textContent = user.email;
 
-      const role = await fetchRole(user.id);
-      userRoleEl.textContent = role;
+      const profile = await fetchProfile(user.id);
+      userRoleEl.textContent = profile.role;
+      currentUserFullName = profile.full_name || '';
+      document.getElementById('profileFullName').value = currentUserFullName;
+      document.getElementById('profileError').textContent = '';
+      document.getElementById('profileSuccess').textContent = '';
 
       const adminNote = await fetchAdminOnlyContent();
       adminPanel.classList.toggle('hidden', !adminNote);
       if (adminNote) adminNoteText.textContent = adminNote;
+
+      await refreshPaymentOnFile();
+      await loadMyTrips();
+    }
+
+    // -----------------------------------------------------------------------
+    // S1-09: My trips — booking confirmation/receipt landing view.
+    // Pulls every reservation for the signed-in user (confirmed, pending, and
+    // payment_failed) via the get_my_reservations() RPC, which joins
+    // reservations -> flights (route/time) and reservations -> payments
+    // (card on file / decline reason) server-side, scoped to auth.uid().
+    // -----------------------------------------------------------------------
+    const STATUS_LABELS = {
+      confirmed: 'Confirmed',
+      pending: 'Pending payment',
+      payment_failed: 'Payment failed',
+      cancelled: 'Cancelled',
+    };
+    const CANCELLABLE_STATUSES = ['pending', 'confirmed'];
+
+    function renderTripCard(trip) {
+      const dep = new Date(trip.departure_time);
+      const statusKey = (trip.status || '').toLowerCase();
+      const statusLabel = STATUS_LABELS[statusKey] || trip.status;
+      const confirmationCode = trip.reservation_id.slice(0, 8).toUpperCase();
+      const paymentLine = trip.last4
+        ? `${trip.card_brand || 'Card'} •••• ${trip.last4}`
+        : (statusKey === 'pending' ? 'Payment not completed' : '');
+      const cancelBtn = CANCELLABLE_STATUSES.includes(statusKey)
+        ? `<button type="button" class="btn btn-ghost cancelTripBtn" data-reservation-id="${trip.reservation_id}" style="margin-top:10px; font-size:0.8rem; padding:7px 14px;">Cancel trip</button>`
+        : '';
+      const ticketBtn = statusKey === 'confirmed'
+        ? `<button type="button" class="btn btn-primary viewTicketBtn" data-reservation-id="${trip.reservation_id}" style="margin-top:10px; font-size:0.8rem; padding:7px 14px;">View ticket</button>`
+        : '';
+
+      return `
+        <div class="tripCard">
+          <div>
+            <span class="statusPill ${statusKey}">${statusLabel}</span>
+            <div class="route">${trip.origin} → ${trip.destination}</div>
+            <div class="when">${dep.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</div>
+            ${trip.return_departure_time
+              ? `<div class="when">Returning ${new Date(trip.return_departure_time).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} (${trip.return_origin} → ${trip.return_destination})</div>`
+              : (trip.return_date ? `<div class="when">Returning ${new Date(`${trip.return_date}T00:00:00`).toLocaleDateString([], { dateStyle: 'medium' })}</div>` : '')}
+            <div class="passenger">${trip.passenger_name}</div>
+            ${statusKey === 'confirmed' ? `<div class="code">Confirmation #<strong>${confirmationCode}</strong></div>` : ''}
+          </div>
+          <div class="right">
+            <div class="fare">$${Number(trip.price_paid).toFixed(2)}</div>
+            ${paymentLine ? `<div class="hint" style="margin-top:6px;">${paymentLine}</div>` : ''}
+            ${ticketBtn}
+            ${cancelBtn}
+          </div>
+        </div>
+      `;
+    }
+
+    async function loadMyTrips() {
+      const loggedOutEl = document.getElementById('tripsLoggedOut');
+      const loggedInEl = document.getElementById('tripsLoggedIn');
+      const listEl = document.getElementById('myTripsList');
+      const errorEl = document.getElementById('myTripsError');
+      if (!listEl) return;
+
+      if (!supabaseClient || !currentUser) {
+        loggedOutEl.classList.remove('hidden');
+        loggedInEl.classList.add('hidden');
+        return;
+      }
+      loggedOutEl.classList.add('hidden');
+      loggedInEl.classList.remove('hidden');
+
+      errorEl.textContent = '';
+      listEl.innerHTML = '<div class="tripsLoading">Loading your trips…</div>';
+
+      const { data, error } = await supabaseClient.rpc('get_my_reservations');
+      if (error) {
+        listEl.innerHTML = '';
+        errorEl.textContent = 'Something went wrong loading your trips. Please try again.';
+        console.error(error);
+        return;
+      }
+
+      const trips = data || [];
+      lastTrips = trips;
+      if (!trips.length) {
+        listEl.innerHTML = '<div class="tripsEmpty">No reservations yet — search a flight above to get started.</div>';
+        return;
+      }
+
+      listEl.innerHTML = trips.map(renderTripCard).join('');
+    }
+
+    // -----------------------------------------------------------------------
+    // S1-09: Ticket / receipt — generated after approved payment, and
+    // re-viewable anytime from a confirmed trip in My Trips.
+    // -----------------------------------------------------------------------
+    function tripToTicketData(trip) {
+      return {
+        confirmationCode: trip.reservation_id.slice(0, 8).toUpperCase(),
+        passengerName: trip.passenger_name,
+        pricePaid: Number(trip.price_paid),
+        cardBrand: trip.card_brand,
+        last4: trip.last4,
+        bookedAt: trip.created_at,
+        outbound: {
+          origin: trip.origin,
+          destination: trip.destination,
+          departureTime: trip.departure_time,
+          arrivalTime: trip.arrival_time,
+        },
+        returnLeg: trip.return_departure_time ? {
+          origin: trip.return_origin,
+          destination: trip.return_destination,
+          departureTime: trip.return_departure_time,
+          arrivalTime: trip.return_arrival_time,
+        } : null,
+      };
+    }
+
+    function renderTicketHTML(ticket) {
+      const fmt = (d) => d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+      const outboundDep = new Date(ticket.outbound.departureTime);
+      const outboundArr = new Date(ticket.outbound.arrivalTime);
+
+      const returnBlock = ticket.returnLeg ? `
+        <div class="legBlock">
+          <div class="legLabel">Return</div>
+          <div class="route">${ticket.returnLeg.origin} → ${ticket.returnLeg.destination}</div>
+          <div class="when">Depart ${fmt(new Date(ticket.returnLeg.departureTime))} · Arrive ${fmt(new Date(ticket.returnLeg.arrivalTime))}</div>
+        </div>
+      ` : '';
+
+      const paymentLine = ticket.cardBrand && ticket.last4
+        ? `${ticket.cardBrand} •••• ${ticket.last4}`
+        : 'Payment on file';
+
+      return `
+        <div class="ticketHead">
+          <div>
+            <div class="brand">Cloud Nine Airline Reservations</div>
+            <div style="font-size:0.75rem; color:rgba(255,255,255,0.75); margin-top:2px;">E-Ticket &amp; Receipt</div>
+          </div>
+          <div class="code">
+            <div class="label">Confirmation</div>
+            <div class="value">${ticket.confirmationCode}</div>
+          </div>
+        </div>
+        <div class="ticketBody">
+          <div class="passengerRow">
+            <div class="label">Passenger</div>
+            <div class="value">${ticket.passengerName}</div>
+          </div>
+
+          <div class="legBlock">
+            <div class="legLabel">${ticket.returnLeg ? 'Outbound' : 'Flight'}</div>
+            <div class="route">${ticket.outbound.origin} → ${ticket.outbound.destination}</div>
+            <div class="when">Depart ${fmt(outboundDep)} · Arrive ${fmt(outboundArr)}</div>
+          </div>
+          ${returnBlock}
+
+          <div class="receiptBlock">
+            <div class="receiptRow"><span>Booked</span><span>${fmt(new Date(ticket.bookedAt))}</span></div>
+            <div class="receiptRow"><span>Payment method</span><span>${paymentLine}</span></div>
+            <div class="receiptRow total"><span>Total paid</span><span>$${ticket.pricePaid.toFixed(2)}</span></div>
+          </div>
+        </div>
+        <div class="footNote">Keep this for your records. Present confirmation #${ticket.confirmationCode} at check-in.</div>
+      `;
+    }
+
+    function openTicketModal(ticket) {
+      document.getElementById('ticketContent').innerHTML = renderTicketHTML(ticket);
+      document.getElementById('ticketModal').classList.remove('hidden');
+    }
+    function closeTicketModal() {
+      document.getElementById('ticketModal').classList.add('hidden');
+    }
+    document.getElementById('ticketClose').addEventListener('click', closeTicketModal);
+    document.getElementById('ticketModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('ticketModal')) closeTicketModal();
+    });
+    document.getElementById('ticketPrintBtn').addEventListener('click', () => window.print());
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !document.getElementById('ticketModal').classList.contains('hidden')) closeTicketModal();
+    });
+
+    // ---- Cancel a pending/confirmed trip, or view a confirmed trip's ticket (event delegation — cards re-render on every load) ----
+    document.getElementById('myTripsList').addEventListener('click', async (e) => {
+      const viewBtn = e.target.closest('.viewTicketBtn');
+      if (viewBtn) {
+        const trip = lastTrips.find((t) => t.reservation_id === viewBtn.dataset.reservationId);
+        if (trip) openTicketModal(tripToTicketData(trip));
+        return;
+      }
+
+      const btn = e.target.closest('.cancelTripBtn');
+      if (!btn) return;
+      const reservationId = btn.dataset.reservationId;
+      const errorEl = document.getElementById('myTripsError');
+      errorEl.textContent = '';
+
+      if (!confirm('Cancel this trip? This can\'t be undone.')) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Cancelling…';
+      const { error } = await supabaseClient.rpc('cancel_reservation', { p_reservation_id: reservationId });
+      if (error) {
+        errorEl.textContent = 'Something went wrong cancelling this trip. Please try again.';
+        console.error(error);
+        btn.disabled = false;
+        btn.textContent = 'Cancel trip';
+        return;
+      }
+      await loadMyTrips();
+    });
+
+    // ---- S1-08: shared card helpers ----
+    function deriveCardBrand(cardNumber) {
+      const digits = cardNumber.replace(/\D/g, '');
+      if (/^4/.test(digits)) return 'Visa';
+      if (/^5[1-5]/.test(digits)) return 'Mastercard';
+      if (/^3[47]/.test(digits)) return 'Amex';
+      if (/^6(?:011|5)/.test(digits)) return 'Discover';
+      return 'Card';
+    }
+    function generateMockToken() {
+      return 'tok_mock_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+
+    async function refreshPaymentOnFile() {
+      const el = document.getElementById('paymentOnFile');
+      const { data, error } = await supabaseClient.rpc('get_payment_method_display');
+      const row = Array.isArray(data) ? data[0] : data;
+      if (error || !row) {
+        el.classList.add('hidden');
+        return;
+      }
+      el.textContent = `💳 On file: ${row.card_brand} ending in ${row.last4}`;
+      el.classList.remove('hidden');
     }
 
     function showLoggedOut() {
+      currentUser = null;
+      currentUserFullName = '';
       loggedOutView.classList.remove('hidden');
       loggedInView.classList.add('hidden');
       headerSignedOut.classList.remove('hidden');
       headerSignedIn.classList.add('hidden');
+      loadMyTrips();
     }
 
     // ---- Restore session on page load ----
