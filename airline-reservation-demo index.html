@@ -813,11 +813,8 @@
     const LOCKOUT_MINUTES = 15;
 
     // True when the page was opened from a password-reset email link.
-    let recoveryInProgress = window.location.hash.includes('type-recovery');
-
-    if (event === 'PASSWORD_RECOVERY' && session) {
-      recoveryInProgress = True;
-      document.getElementById('resetConfirmEmail').textContent = session.user.email || '';
+    // Must be read BEFORE createClient() below, which clears the URL hash.
+    let recoveryInProgress = window.location.hash.includes('type=recovery');
 
     const isConfigured = !SUPABASE_URL.includes('YOUR-PROJECT-REF');
     document.getElementById('configWarning').classList.toggle('hidden', isConfigured);
@@ -1677,8 +1674,8 @@
     // -----------------------------------------------------------------------
     function closeResetPasswordModal() {
       document.getElementById('resetPasswordModal').classList.add('hidden');
-      if (recoverInProgress) {
-        recoveryInProgress = fales;
+      if (recoveryInProgress) {
+        recoveryInProgress = false;
         handleLogout(); // reset abandoned: don't leave a session behind
       }
     }
@@ -1781,6 +1778,7 @@
     if (supabaseClient) {
       supabaseClient.auth.onAuthStateChange((event, session) => {
         if (event === 'PASSWORD_RECOVERY' && session) {
+          recoveryInProgress = true;
           document.getElementById('resetConfirmEmail').textContent = session.user.email || '';
           document.getElementById('resetConfirmForm').reset();
           checkPasswordPolicy('', 'resetRule');
