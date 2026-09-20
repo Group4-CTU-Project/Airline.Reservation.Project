@@ -812,6 +812,13 @@
     const MAX_FAILED_ATTEMPTS = 5;
     const LOCKOUT_MINUTES = 15;
 
+    // True when the page was opened from a password-reset email link.
+    let recoveryInProgress = window.location.hash.includes('type-recovery');
+
+    if (event === 'PASSWORD_RECOVERY' && session) {
+      recoveryInProgress = True;
+      document.getElementById('resetConfirmEmail').textContent = session.user.email || '';
+
     const isConfigured = !SUPABASE_URL.includes('YOUR-PROJECT-REF');
     document.getElementById('configWarning').classList.toggle('hidden', isConfigured);
 
@@ -1670,6 +1677,10 @@
     // -----------------------------------------------------------------------
     function closeResetPasswordModal() {
       document.getElementById('resetPasswordModal').classList.add('hidden');
+      if (recoverInProgress) {
+        recoveryInProgress = fales;
+        handleLogout(); // reset abandoned: don't leave a session behind
+      }
     }
 
     function openResetRequestView() {
@@ -1752,6 +1763,7 @@
           console.error(error);
           return;
         }
+        recoveryInProgress = false;
         successEl.textContent = 'Password updated! You\'re now signed in.';
         setTimeout(() => {
           closeResetPasswordModal();
@@ -2176,7 +2188,7 @@
     (async () => {
       if (!supabaseClient) return;
       const { data } = await supabaseClient.auth.getSession();
-      if (data.session) showLoggedIn(data.session.user);
+      if (data.session && !recoveryInProgress) showLoggedIn(data.session.user);
     })();
   </script>
 </body>
