@@ -576,6 +576,7 @@
                 <input type="password" id="loginPassword" required autocomplete="current-password" />
                 <button type="submit" id="loginBtn" class="btn btn-primary btn-block" style="margin-top:18px;">Log in</button>
               </form>
+              <p style="margin:10px 0 0; font-size:0.85rem;"><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
               <div class="error" id="loginError"></div>
             </div>
           </div>
@@ -735,6 +736,43 @@
       <button type="button" id="ticketClose" class="modalClose" aria-label="Close">&times;</button>
       <div class="ticket" id="ticketContent"></div>
       <button type="button" id="ticketPrintBtn" class="btn btn-primary btn-block" style="margin-top:16px;">Print / Save as PDF</button>
+    </div>
+  </div>
+
+  <div id="resetPasswordModal" class="modalOverlay hidden">
+    <div class="modalCard">
+      <button type="button" id="resetPasswordClose" class="modalClose" aria-label="Close">&times;</button>
+
+      <div id="resetRequestView">
+        <h2>Reset your password</h2>
+        <p class="hint" style="margin:4px 0 16px;">Enter your account email and we'll send you a link to reset your password.</p>
+        <form id="resetRequestForm">
+          <label for="resetRequestEmail">Email</label>
+          <input type="email" id="resetRequestEmail" required autocomplete="email" />
+          <button type="submit" id="resetRequestBtn" class="btn btn-primary btn-block" style="margin-top:14px;">Send reset link</button>
+        </form>
+        <div class="error" id="resetRequestError"></div>
+        <div class="success" id="resetRequestSuccess"></div>
+      </div>
+
+      <div id="resetConfirmView" class="hidden">
+        <h2>Choose a new password</h2>
+        <p class="hint" style="margin:4px 0 16px;">You're resetting the password for <strong id="resetConfirmEmail"></strong>.</p>
+        <form id="resetConfirmForm">
+          <label for="resetNewPassword">New password</label>
+          <input type="password" id="resetNewPassword" required autocomplete="new-password" minlength="10" />
+          <ul class="policy-list" id="resetPolicyList">
+            <li id="resetRuleLength">At least 10 characters</li>
+            <li id="resetRuleUpper">One uppercase letter</li>
+            <li id="resetRuleLower">One lowercase letter</li>
+            <li id="resetRuleNumber">One number</li>
+            <li id="resetRuleSymbol">One symbol (e.g. ! @ # $)</li>
+          </ul>
+          <button type="submit" id="resetConfirmBtn" class="btn btn-primary btn-block" style="margin-top:18px;">Update password</button>
+        </form>
+        <div class="error" id="resetConfirmError"></div>
+        <div class="success" id="resetConfirmSuccess"></div>
+      </div>
     </div>
   </div>
 
@@ -1478,18 +1516,24 @@
     // S1-02: Password policy
     // -----------------------------------------------------------------------
     const passwordRules = [
-      { id: 'ruleLength', test: (pw) => pw.length >= 10 },
-      { id: 'ruleUpper', test: (pw) => /[A-Z]/.test(pw) },
-      { id: 'ruleLower', test: (pw) => /[a-z]/.test(pw) },
-      { id: 'ruleNumber', test: (pw) => /[0-9]/.test(pw) },
-      { id: 'ruleSymbol', test: (pw) => /[^A-Za-z0-9]/.test(pw) },
+      { suffix: 'Length', test: (pw) => pw.length >= 10 },
+      { suffix: 'Upper', test: (pw) => /[A-Z]/.test(pw) },
+      { suffix: 'Lower', test: (pw) => /[a-z]/.test(pw) },
+      { suffix: 'Number', test: (pw) => /[0-9]/.test(pw) },
+      { suffix: 'Symbol', test: (pw) => /[^A-Za-z0-9]/.test(pw) },
     ];
 
-    function checkPasswordPolicy(password) {
+    // prefix defaults to 'rule' (registration form's existing IDs:
+    // ruleLength, ruleUpper, ...) so this stays a drop-in for the original
+    // call sites. The reset-password form reuses it with prefix
+    // 'resetRule' (resetRuleLength, resetRuleUpper, ...) instead of
+    // duplicating the policy logic.
+    function checkPasswordPolicy(password, prefix = 'rule') {
       let allPass = true;
       for (const rule of passwordRules) {
+        const el = document.getElementById(`${prefix}${rule.suffix}`);
         const passed = rule.test(password);
-        document.getElementById(rule.id).classList.toggle('ok', passed);
+        if (el) el.classList.toggle('ok', passed);
         if (!passed) allPass = false;
       }
       return allPass;
@@ -1613,6 +1657,129 @@
       showLoggedOut();
     }
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+    // -----------------------------------------------------------------------
+    // S2-01: Password reset — request + single-use expiring token.
+    // Uses Supabase Auth's built-in recovery flow rather than a custom
+    // token table: resetPasswordForEmail() emails a link containing a
+    // short-lived, single-use recovery token that Supabase issues and
+    // validates server-side. When the user clicks it and lands back here,
+    // the Supabase client parses the token from the URL and fires a
+    // PASSWORD_RECOVERY auth event, which is what opens the "set new
+    // password" step below — no separate reset-token storage needed.
+    // -----------------------------------------------------------------------
+    function closeResetPasswordModal() {
+      document.getElementById('resetPasswordModal').classList.add('hidden');
+    }
+
+    function openResetRequestView() {
+      document.getElementById('resetRequestError').textContent = '';
+      document.getElementById('resetRequestSuccess').textContent = '';
+      document.getElementById('resetRequestForm').reset();
+      document.getElementById('resetConfirmView').classList.add('hidden');
+      document.getElementById('resetRequestView').classList.remove('hidden');
+      document.getElementById('resetPasswordModal').classList.remove('hidden');
+    }
+
+    document.getElementById('forgotPasswordLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      openResetRequestView();
+    });
+
+    document.getElementById('resetPasswordClose').addEventListener('click', closeResetPasswordModal);
+    document.getElementById('resetPasswordModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('resetPasswordModal')) closeResetPasswordModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !document.getElementById('resetPasswordModal').classList.contains('hidden')) {
+        closeResetPasswordModal();
+      }
+    });
+
+    // ---- Step 1: request the reset email ----
+    document.getElementById('resetRequestForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('resetRequestError');
+      const successEl = document.getElementById('resetRequestSuccess');
+      errorEl.textContent = '';
+      successEl.textContent = '';
+      if (!supabaseClient) { errorEl.textContent = 'Set up your Supabase keys first — see the warning above.'; return; }
+
+      const email = document.getElementById('resetRequestEmail').value.trim();
+      if (!email) { errorEl.textContent = 'Please enter your email.'; return; }
+
+      const btn = document.getElementById('resetRequestBtn');
+      btn.disabled = true;
+      try {
+        await supabaseClient.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + window.location.pathname,
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        // Same message whether or not the address has an account —
+        // confirming/denying an email exists is an account-enumeration risk.
+        successEl.textContent = 'If an account exists for that email, a password reset link is on its way. Check your inbox.';
+        document.getElementById('resetRequestForm').reset();
+        btn.disabled = false;
+      }
+    });
+
+    // ---- Step 2: set a new password (only reachable via a valid recovery link) ----
+    document.getElementById('resetNewPassword').addEventListener('input', (e) => {
+      checkPasswordPolicy(e.target.value, 'resetRule');
+    });
+
+    document.getElementById('resetConfirmForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('resetConfirmError');
+      const successEl = document.getElementById('resetConfirmSuccess');
+      errorEl.textContent = '';
+      successEl.textContent = '';
+
+      const newPassword = document.getElementById('resetNewPassword').value;
+      if (!checkPasswordPolicy(newPassword, 'resetRule')) {
+        errorEl.textContent = 'Please meet all password requirements.';
+        return;
+      }
+
+      const btn = document.getElementById('resetConfirmBtn');
+      btn.disabled = true;
+      try {
+        const { data, error } = await supabaseClient.auth.updateUser({ password: newPassword });
+        if (error) {
+          errorEl.textContent = 'Something went wrong updating your password. This reset link may have expired — request a new one.';
+          console.error(error);
+          return;
+        }
+        successEl.textContent = 'Password updated! You\'re now signed in.';
+        setTimeout(() => {
+          closeResetPasswordModal();
+          if (data.user) showLoggedIn(data.user);
+        }, 1400);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // The recovery link lands back on this page with a token Supabase's
+    // client parses automatically, firing this event — that's what opens
+    // step 2 above, whether or not "Forgot password?" was ever clicked in
+    // this browser session.
+    if (supabaseClient) {
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY' && session) {
+          document.getElementById('resetConfirmEmail').textContent = session.user.email || '';
+          document.getElementById('resetConfirmForm').reset();
+          checkPasswordPolicy('', 'resetRule');
+          document.getElementById('resetConfirmError').textContent = '';
+          document.getElementById('resetConfirmSuccess').textContent = '';
+          document.getElementById('resetRequestView').classList.add('hidden');
+          document.getElementById('resetConfirmView').classList.remove('hidden');
+          document.getElementById('resetPasswordModal').classList.remove('hidden');
+        }
+      });
+    }
 
     // ---- S1-08: save a payment method from the profile page ----
     document.getElementById('paymentForm').addEventListener('submit', async (e) => {
