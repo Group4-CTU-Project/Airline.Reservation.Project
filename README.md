@@ -23,3 +23,23 @@ To keep history clean and avoid overwriting each other's work:
 3. **Merge through the PR**, not by re-uploading the same file to `main`.
 
 This avoids duplicate files (like the old `airline-reservation-demo (N).html` copies) and lost work sitting only on someone's laptop.
+
+## How to create a branch (step by step)
+
+Before making any change — even a small one — create a branch first. Don't upload or edit files directly on `main`.
+
+1. **Go to the repo's main page** and make sure the branch dropdown (top left, next to the repo name) shows `main`. Branches are always created *from* whatever branch you're currently on, so start from `main` unless you have a reason not to.
+2. **Click the branch dropdown.** A search box appears.
+3. **Type a name for your branch.** Use something short that describes the change, like `add-seat-map` or `fix-login-bug` — not your name or the date.
+4. **Click "Create branch: [your branch name] from main."** GitHub creates it and switches you onto it — check that the dropdown now shows your new branch name instead of `main`.
+5. **Make your changes on this branch.** Edit files, upload files, or use "Add file → Upload files" as normal — anything you do now happens on your branch, not on `main`, so `main` stays untouched.
+   - **To edit an existing file's code:** double-check the branch dropdown still shows your branch (not `main`), then click into the file you want to change. Click the pencil (✏️) icon in the top right of the file view to open the editor.
+   - Make your changes directly in the editor. GitHub highlights lines you've changed in green (added) and red (removed) in a preview tab, so you can double check what you actually changed before committing.
+   - Scroll to the bottom. Under "Commit changes," write a short message describing what you changed (e.g. "Add password reset flow").
+   - Make sure **"Commit directly to the `[your branch name]` branch"** is selected — not `main`. This option only appears if you're on a branch other than `main`, which is another reason step 1 matters.
+   - Click **"Commit changes."** This saves your edit to the branch only; `main` still has the old version until you merge.
+6. **When you're ready, open a pull request.** Go to the "Pull requests" tab → "New pull request." Set `base: main` and `compare: [your branch name]`, then click "Create pull request."
+7. **Review the changes, then merge.** Once you (or your teammate) have looked over the diff and it looks right, click "Merge pull request," then confirm.
+8. **Delete the branch after merging** (GitHub will offer a button for this right after the merge). Its work is now safely part of `main`, so the branch has done its job.
+
+**If you're uploading a file** (via "Add file → Upload files") instead of editing in the browser: after choosing your file(s), scroll down to the commit box at the bottom. There's an option there to **"Create a new branch for this commit and start a pull request."** Selecting that does steps 1–6 above automatically in one motion — it's the fastest way to avoid uploading straight to `main` by accident.
