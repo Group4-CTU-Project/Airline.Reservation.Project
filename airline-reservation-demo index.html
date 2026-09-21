@@ -315,6 +315,36 @@
   .tripsEmpty { color: var(--text-soft); font-size: 0.9rem; padding: 6px 0 2px; }
   .tripsLoading { color: var(--text-soft); font-size: 0.9rem; padding: 6px 0 2px; }
 
+  /* ---- S2-03/PB-09: Manager dashboard ---- */
+  .statTiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 700px) { .statTiles { grid-template-columns: 1fr 1fr; } }
+  .statTile {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .statTile .statNum { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 1.6rem; color: var(--ink); }
+  .statTile .statLabel { font-size: 0.8rem; color: var(--text-soft); font-weight: 700; margin-top: 2px; }
+  .statTile.confirmed .statNum { color: #1E8E5A; }
+  .statTile.pending .statNum { color: var(--gold-dark); }
+  .statTile.payment_failed .statNum { color: #B00020; }
+  .statTile.cancelled .statNum { color: var(--text-soft); }
+
+  .managerFilterGrid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 16px; align-items: end;
+  }
+  @media (max-width: 780px) { .managerFilterGrid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px) { .managerFilterGrid { grid-template-columns: 1fr; } }
+  .managerFilterGrid label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .managerFilterGrid input, .managerFilterGrid select {
+    width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 7px;
+    font-family: inherit; background: #fff; box-sizing: border-box;
+  }
+  .managerFilterActions { display: flex; gap: 10px; }
+
+  .managerResultsHead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .managerPagination { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 18px; }
+  .managerPagination .pageInfo { font-size: 0.85rem; color: var(--text-soft); }
+
   footer { padding: 32px 0 48px; text-align: center; color: var(--text-soft); font-size: 0.82rem; }
 
   /* ---- S1-06: Booking modal ---- */
@@ -437,6 +467,7 @@
         <li><a href="#results">Destinations</a></li>
         <li><a href="#trips">My Trips</a></li>
         <li><a href="#account">Account</a></li>
+        <li id="navManagerLink" class="hidden"><a href="#manager">Manager</a></li>
       </ul>
       <div class="navRight">
         <span id="headerSignedOut">
@@ -648,6 +679,98 @@
     </div>
   </div>
 
+  <div class="accountSection hidden" id="managerSectionWrap">
+    <div class="wrap">
+      <section id="manager">
+        <div class="sectionHead">
+          <h2>Manager Dashboard</h2>
+          <p>Track and filter every reservation across all customers.</p>
+        </div>
+
+        <div class="statTiles" id="managerStatTiles"></div>
+
+        <div class="panel hidden" id="mgrRolePanel" style="margin-top:20px;">
+          <div class="sectionHead" style="margin-bottom:12px;">
+            <h3 style="margin:0;">Assign a role</h3>
+            <p style="margin:4px 0 0; font-size:0.85rem;">Look up an account by email and set its role. Use this to give a new hire admin access instead of editing it in Supabase directly. You can't change your own role here.</p>
+          </div>
+          <form id="mgrRoleForm" class="managerFilterGrid">
+            <div>
+              <label for="mgrRoleEmail">Account email</label>
+              <input type="email" id="mgrRoleEmail" placeholder="employee@example.com" required />
+            </div>
+            <div>
+              <label for="mgrRoleSelect">New role</label>
+              <select id="mgrRoleSelect">
+                <option value="customer">Customer</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="managerFilterActions">
+              <button type="submit" id="mgrRoleSubmitBtn" class="btn btn-primary">Update role</button>
+            </div>
+          </form>
+          <div class="hint" id="mgrRoleFound" style="margin-top:8px;"></div>
+          <div class="error" id="mgrRoleError"></div>
+          <div class="success" id="mgrRoleSuccess"></div>
+        </div>
+
+        <div class="panel" style="margin-top:20px;">
+          <form id="managerFilterForm" class="managerFilterGrid">
+            <div>
+              <label for="mgrFilterStatus">Status</label>
+              <select id="mgrFilterStatus">
+                <option value="">All statuses</option>
+                <option value="pending">Pending payment</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="payment_failed">Payment failed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label for="mgrFilterOrigin">Origin</label>
+              <input type="text" id="mgrFilterOrigin" placeholder="JFK" />
+            </div>
+            <div>
+              <label for="mgrFilterDestination">Destination</label>
+              <input type="text" id="mgrFilterDestination" placeholder="LAX" />
+            </div>
+            <div>
+              <label for="mgrFilterDateFrom">Departs on/after</label>
+              <input type="date" id="mgrFilterDateFrom" />
+            </div>
+            <div>
+              <label for="mgrFilterDateTo">Departs on/before</label>
+              <input type="date" id="mgrFilterDateTo" />
+            </div>
+            <div>
+              <label for="mgrFilterSearch">Search passenger name or email</label>
+              <input type="text" id="mgrFilterSearch" placeholder="Jane Doe or jane@email.com" />
+            </div>
+            <div class="managerFilterActions">
+              <button type="submit" id="mgrApplyBtn" class="btn btn-primary">Apply filters</button>
+              <button type="button" id="mgrResetBtn" class="btn btn-ghost">Reset</button>
+            </div>
+          </form>
+        </div>
+
+        <div style="margin-top:20px;">
+          <div class="managerResultsHead">
+            <span id="managerResultsCount" class="hint"></span>
+          </div>
+          <div id="managerReservationsList"></div>
+          <div class="error" id="managerError"></div>
+          <div class="managerPagination hidden" id="managerPagination">
+            <button type="button" id="mgrPrevBtn" class="btn btn-ghost">Previous</button>
+            <span class="pageInfo" id="managerPageInfo"></span>
+            <button type="button" id="mgrNextBtn" class="btn btn-ghost">Next</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
   <footer class="wrap">
     Cloud Nine Airline Reservations — a Sprint 1 demo project.
   </footer>
@@ -838,6 +961,7 @@
     // and which flight the booking modal is currently open for.
     let currentUser = null;
     let currentUserFullName = '';
+    let currentUserRole = 'customer';
     let currentBookingFlight = null;
     let currentReturnFlight = null;
     let currentExpectedPrice = null;
@@ -1649,7 +1773,7 @@
           return;
         }
         await clearFailedAttempts(email);
-        showLoggedIn(data.user);
+        showLoggedIn(data.user, true);
       } finally {
         btn.disabled = false;
       }
@@ -1764,7 +1888,7 @@
         successEl.textContent = 'Password updated! You\'re now signed in.';
         setTimeout(() => {
           closeResetPasswordModal();
-          if (data.user) showLoggedIn(data.user);
+          if (data.user) showLoggedIn(data.user, true);
         }, 1400);
       } finally {
         btn.disabled = false;
@@ -1907,7 +2031,7 @@
       return data.note;
     }
 
-    async function showLoggedIn(user) {
+    async function showLoggedIn(user, isFreshLogin = false) {
       currentUser = user;
       loggedOutView.classList.add('hidden');
       loggedInView.classList.remove('hidden');
@@ -1918,6 +2042,7 @@
 
       const profile = await fetchProfile(user.id);
       userRoleEl.textContent = profile.role;
+      currentUserRole = profile.role;
       currentUserFullName = profile.full_name || '';
       document.getElementById('profileFullName').value = currentUserFullName;
       document.getElementById('profileError').textContent = '';
@@ -1927,8 +2052,30 @@
       adminPanel.classList.toggle('hidden', !adminNote);
       if (adminNote) adminNoteText.textContent = adminNote;
 
+      // admin is a superset of manager: both see the Manager Dashboard
+      // (reservation tracking). The "Assign a role" panel is UI-only shown
+      // to manager accounts -- admins don't need it surfaced in their view,
+      // and customers never see the dashboard at all. Note this only hides
+      // the panel: set_user_role_by_email() itself is still admin-or-manager
+      // gated server-side (20260921050000_add_manager_role.sql), so an admin
+      // isn't blocked from the capability, just from this particular button.
+      const canViewManagerDashboard = currentUserRole === 'admin' || currentUserRole === 'manager';
+      const canSeeRolePanel = currentUserRole === 'manager';
+      document.getElementById('navManagerLink').classList.toggle('hidden', !canViewManagerDashboard);
+      document.getElementById('managerSectionWrap').classList.toggle('hidden', !canViewManagerDashboard);
+      document.getElementById('mgrRolePanel').classList.toggle('hidden', !canSeeRolePanel);
+
       await refreshPaymentOnFile();
       await loadMyTrips();
+      if (canViewManagerDashboard) await loadManagerDashboard();
+
+      // Managers/admins land on the Manager Dashboard, not the flight-search
+      // landing page, on the login that actually brought them in -- but not
+      // on every silent session restore (page refresh, coming back from a
+      // deep link), which would be a jarring surprise scroll.
+      if (canViewManagerDashboard && isFreshLogin) {
+        document.getElementById('manager').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
 
     // -----------------------------------------------------------------------
@@ -2147,6 +2294,222 @@
       await loadMyTrips();
     });
 
+    // -----------------------------------------------------------------------
+    // S2-03 / PB-09: Manager reservation-tracking dashboard and filters.
+    // Admin-only. Pulls from get_all_reservations() / get_reservation_status_counts()
+    // (see 20260921000000_manager_reservation_dashboard.sql) — both raise an
+    // exception server-side for a non-admin caller, so the nav link/section
+    // being hidden for everyone else is a UX nicety, not the real gate.
+    // -----------------------------------------------------------------------
+    const MANAGER_PAGE_SIZE = 10;
+    let managerOffset = 0;
+    let managerTotalCount = 0;
+    let lastManagerReservations = [];
+    let managerFilters = { status: '', origin: '', destination: '', dateFrom: '', dateTo: '', search: '' };
+
+    function readManagerFiltersFromForm() {
+      managerFilters = {
+        status: document.getElementById('mgrFilterStatus').value,
+        origin: document.getElementById('mgrFilterOrigin').value.trim(),
+        destination: document.getElementById('mgrFilterDestination').value.trim(),
+        dateFrom: document.getElementById('mgrFilterDateFrom').value,
+        dateTo: document.getElementById('mgrFilterDateTo').value,
+        search: document.getElementById('mgrFilterSearch').value.trim(),
+      };
+    }
+
+    async function loadManagerStatTiles() {
+      const container = document.getElementById('managerStatTiles');
+      const { data, error } = await supabaseClient.rpc('get_reservation_status_counts');
+      if (error) {
+        console.error('get_reservation_status_counts failed:', error);
+        container.innerHTML = '';
+        return;
+      }
+      const counts = { pending: 0, confirmed: 0, payment_failed: 0, cancelled: 0 };
+      (data || []).forEach((row) => {
+        if (row.status in counts) counts[row.status] = Number(row.count);
+      });
+      const order = ['confirmed', 'pending', 'payment_failed', 'cancelled'];
+      container.innerHTML = order.map((statusKey) => `
+        <div class="statTile ${statusKey}">
+          <div class="statNum">${counts[statusKey]}</div>
+          <div class="statLabel">${STATUS_LABELS[statusKey]}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderManagerReservationCard(trip) {
+      // Reuses renderTripCard's layout/markup shape (statusPill, route, fare,
+      // ticket button) since get_all_reservations returns the same field
+      // names as get_my_reservations — only the actions differ (no cancel
+      // button here; cancelling is a customer/My Trips action, not a manager one).
+      const dep = new Date(trip.departure_time);
+      const statusKey = (trip.status || '').toLowerCase();
+      const statusLabel = STATUS_LABELS[statusKey] || trip.status;
+      const confirmationCode = trip.reservation_id.slice(0, 8).toUpperCase();
+      const paymentLine = trip.last4
+        ? `${trip.card_brand || 'Card'} •••• ${trip.last4}`
+        : (statusKey === 'pending' ? 'Payment not completed' : '');
+      const ticketBtn = statusKey === 'confirmed'
+        ? `<button type="button" class="btn btn-primary viewManagerTicketBtn" data-reservation-id="${trip.reservation_id}" style="margin-top:10px; font-size:0.8rem; padding:7px 14px;">View ticket</button>`
+        : '';
+
+      return `
+        <div class="tripCard">
+          <div>
+            <span class="statusPill ${statusKey}">${statusLabel}</span>
+            <div class="route">${trip.origin} → ${trip.destination}${trip.seat_number ? ` <span class="hint">· Seat ${trip.seat_number}</span>` : ''}</div>
+            <div class="when">${dep.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</div>
+            ${trip.return_departure_time
+              ? `<div class="when">Returning ${new Date(trip.return_departure_time).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} (${trip.return_origin} → ${trip.return_destination})${trip.return_seat_number ? ` · Seat ${trip.return_seat_number}` : ''}</div>`
+              : (trip.return_date ? `<div class="when">Returning ${new Date(`${trip.return_date}T00:00:00`).toLocaleDateString([], { dateStyle: 'medium' })}</div>` : '')}
+            <div class="passenger">${trip.passenger_name} · ${trip.passenger_email}</div>
+            ${statusKey === 'confirmed' ? `<div class="code">Confirmation #<strong>${confirmationCode}</strong></div>` : ''}
+          </div>
+          <div class="right">
+            <div class="fare">$${Number(trip.price_paid).toFixed(2)}</div>
+            ${paymentLine ? `<div class="hint" style="margin-top:6px;">${paymentLine}</div>` : ''}
+            ${ticketBtn}
+          </div>
+        </div>
+      `;
+    }
+
+    async function loadManagerReservations() {
+      const listEl = document.getElementById('managerReservationsList');
+      const errorEl = document.getElementById('managerError');
+      const countEl = document.getElementById('managerResultsCount');
+      const paginationEl = document.getElementById('managerPagination');
+      errorEl.textContent = '';
+      listEl.innerHTML = '<div class="tripsLoading">Loading reservations…</div>';
+      paginationEl.classList.add('hidden');
+
+      const { data, error } = await supabaseClient.rpc('get_all_reservations', {
+        p_status: managerFilters.status || null,
+        p_origin: managerFilters.origin || null,
+        p_destination: managerFilters.destination || null,
+        p_date_from: managerFilters.dateFrom || null,
+        p_date_to: managerFilters.dateTo || null,
+        p_search: managerFilters.search || null,
+        p_limit: MANAGER_PAGE_SIZE,
+        p_offset: managerOffset,
+      });
+
+      if (error) {
+        listEl.innerHTML = '';
+        errorEl.textContent = 'Something went wrong loading reservations. Please try again.';
+        console.error(error);
+        return;
+      }
+
+      const rows = data || [];
+      lastManagerReservations = rows;
+      managerTotalCount = rows.length ? Number(rows[0].total_count) : 0;
+
+      if (!rows.length) {
+        countEl.textContent = managerOffset > 0 ? '' : 'No reservations match these filters.';
+        listEl.innerHTML = managerOffset > 0 ? '' : '<div class="tripsEmpty">No reservations match these filters.</div>';
+        if (managerOffset > 0) {
+          // Filters changed underneath an existing page — snap back rather
+          // than show a dead end.
+          managerOffset = 0;
+          await loadManagerReservations();
+        }
+        return;
+      }
+
+      const rangeStart = managerOffset + 1;
+      const rangeEnd = managerOffset + rows.length;
+      countEl.textContent = `Showing ${rangeStart}–${rangeEnd} of ${managerTotalCount}`;
+      listEl.innerHTML = rows.map(renderManagerReservationCard).join('');
+
+      const pageInfoEl = document.getElementById('managerPageInfo');
+      const prevBtn = document.getElementById('mgrPrevBtn');
+      const nextBtn = document.getElementById('mgrNextBtn');
+      const currentPage = Math.floor(managerOffset / MANAGER_PAGE_SIZE) + 1;
+      const totalPages = Math.max(1, Math.ceil(managerTotalCount / MANAGER_PAGE_SIZE));
+      pageInfoEl.textContent = `Page ${currentPage} of ${totalPages}`;
+      prevBtn.disabled = managerOffset === 0;
+      nextBtn.disabled = rangeEnd >= managerTotalCount;
+      paginationEl.classList.remove('hidden');
+    }
+
+    async function loadManagerDashboard() {
+      await Promise.all([loadManagerStatTiles(), loadManagerReservations()]);
+    }
+
+    document.getElementById('managerFilterForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      readManagerFiltersFromForm();
+      managerOffset = 0;
+      loadManagerReservations();
+    });
+
+    document.getElementById('mgrResetBtn').addEventListener('click', () => {
+      document.getElementById('managerFilterForm').reset();
+      managerFilters = { status: '', origin: '', destination: '', dateFrom: '', dateTo: '', search: '' };
+      managerOffset = 0;
+      loadManagerReservations();
+    });
+
+    document.getElementById('mgrPrevBtn').addEventListener('click', () => {
+      managerOffset = Math.max(0, managerOffset - MANAGER_PAGE_SIZE);
+      loadManagerReservations();
+    });
+    document.getElementById('mgrNextBtn').addEventListener('click', () => {
+      managerOffset += MANAGER_PAGE_SIZE;
+      loadManagerReservations();
+    });
+
+    // S2-03 follow-up: "Assign a role" panel. Calls set_user_role_by_email(),
+    // which is admin/manager-gated and blocks self-role-changes server-side
+    // (see 20260921050000_add_manager_role.sql) -- the checks here are just
+    // for a fast, friendly error message, not the actual security boundary.
+    document.getElementById('mgrRoleForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('mgrRoleError');
+      const successEl = document.getElementById('mgrRoleSuccess');
+      const foundEl = document.getElementById('mgrRoleFound');
+      const submitBtn = document.getElementById('mgrRoleSubmitBtn');
+      errorEl.textContent = '';
+      successEl.textContent = '';
+      foundEl.textContent = '';
+
+      const email = document.getElementById('mgrRoleEmail').value.trim();
+      const newRole = document.getElementById('mgrRoleSelect').value;
+      if (!email) return;
+
+      if (currentUser && email.toLowerCase() === (currentUser.email || '').toLowerCase()) {
+        errorEl.textContent = "You can't change your own role.";
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Updating…';
+      try {
+        const { error } = await supabaseClient.rpc('set_user_role_by_email', {
+          p_email: email,
+          p_new_role: newRole,
+        });
+        if (error) throw error;
+        successEl.textContent = `${email} is now ${newRole}.`;
+        document.getElementById('mgrRoleForm').reset();
+      } catch (err) {
+        errorEl.textContent = err.message || 'Could not update that account’s role.';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Update role';
+      }
+    });
+
+    document.getElementById('managerReservationsList').addEventListener('click', (e) => {
+      const viewBtn = e.target.closest('.viewManagerTicketBtn');
+      if (!viewBtn) return;
+      const trip = lastManagerReservations.find((t) => t.reservation_id === viewBtn.dataset.reservationId);
+      if (trip) openTicketModal(tripToTicketData(trip));
+    });
+
     // ---- S1-08: shared card helpers ----
     function deriveCardBrand(cardNumber) {
       const digits = cardNumber.replace(/\D/g, '');
@@ -2175,10 +2538,13 @@
     function showLoggedOut() {
       currentUser = null;
       currentUserFullName = '';
+      currentUserRole = 'customer';
       loggedOutView.classList.remove('hidden');
       loggedInView.classList.add('hidden');
       headerSignedOut.classList.remove('hidden');
       headerSignedIn.classList.add('hidden');
+      document.getElementById('navManagerLink').classList.add('hidden');
+      document.getElementById('managerSectionWrap').classList.add('hidden');
       loadMyTrips();
     }
 
