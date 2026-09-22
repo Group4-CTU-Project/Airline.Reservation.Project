@@ -418,6 +418,16 @@
   .statusCard .route { font-weight: 800; color: var(--ink); font-size: 1.15rem; margin-top: 10px; }
   .statusCard .when { color: var(--text-soft); font-size: 0.88rem; margin-top: 6px; }
   .statusCard .flightNum { font-size: 0.78rem; color: var(--text-soft); letter-spacing: 0.03em; }
+  .statusTable { width: 100%; border-collapse: collapse; font-size: 0.88rem; white-space: nowrap; }
+  .statusTable th {
+    text-align: left; padding: 12px 18px; font-size: 0.7rem; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text-soft); background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .statusTable td { padding: 12px 18px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .statusTable tbody tr:last-child td { border-bottom: none; }
+  .statusTable tbody tr:hover td { background: var(--bg); cursor: pointer; }
+  .statusTable td.flightNumCell { font-weight: 800; color: var(--ink); }
   .tripsEmpty { color: var(--text-soft); font-size: 0.9rem; padding: 6px 0 2px; }
   .tripsLoading { color: var(--text-soft); font-size: 0.9rem; padding: 6px 0 2px; }
 
@@ -745,6 +755,27 @@
         </div>
 
         <div id="statusLookupResult" style="max-width:480px; margin-top:20px;"></div>
+
+        <div class="sectionHead" style="margin-top:36px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px;">
+          <div>
+            <h2>All flights</h2>
+            <p>Live status for every scheduled flight. Click a row to look it up above.</p>
+          </div>
+          <button type="button" id="statusBoardRefreshBtn" class="btn btn-ghost" style="flex-shrink:0;">Refresh</button>
+        </div>
+        <div class="panel" style="padding:0; overflow:hidden;">
+          <div id="statusBoardWrap" style="overflow-x:auto;">
+            <table class="statusTable" id="statusBoardTable">
+              <thead>
+                <tr><th>Flight</th><th>Route</th><th>Departs</th><th>Status</th></tr>
+              </thead>
+              <tbody id="statusBoardBody">
+                <tr><td colspan="4" class="tripsLoading">Loading flights…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="error" id="statusBoardError" style="padding:0 22px 16px;"></div>
+        </div>
       </section>
     </div>
   </div>
@@ -1310,8 +1341,7 @@
       `;
     }
 
-    document.getElementById('statusLookupForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    async function lookupFlightStatus(flightNumber) {
       const errorEl = document.getElementById('statusLookupError');
       const resultEl = document.getElementById('statusLookupResult');
       const btn = document.getElementById('statusLookupBtn');
@@ -1319,8 +1349,6 @@
       resultEl.innerHTML = '';
 
       if (!supabaseClient) { errorEl.textContent = 'Set up your Supabase keys first — see the warning above.'; return; }
-
-      const flightNumber = document.getElementById('statusFlightNumber').value.trim().toUpperCase();
       if (!flightNumber) return;
 
       const cols = FLIGHTS_CONFIG.columns;
@@ -1362,6 +1390,84 @@
         btn.disabled = false;
         btn.textContent = 'Check status';
       }
+    }
+
+    document.getElementById('statusLookupForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      lookupFlightStatus(document.getElementById('statusFlightNumber').value.trim().toUpperCase());
+    });
+
+    // ---- All-flights board (Flight status page) ----
+    // A departures-board-style table of every flight and its current status,
+    // sitting above the single-flight lookup so someone who doesn't already
+    // know a flight number can still see what's going on, or click a row to
+    // pull up the same detail card the lookup form produces.
+    function renderStatusBoardRow(flight) {
+      const cols = FLIGHTS_CONFIG.columns;
+      const flightNumber = flight[cols.flightNumber];
+      const statusKey = String(flight[cols.status] || 'scheduled').toLowerCase();
+      const statusLabel = FLIGHT_STATUS_LABELS[statusKey] || (flight[cols.status] || 'Unknown');
+      const pillClass = FLIGHT_STATUS_LABELS[statusKey] ? `flight-${statusKey}` : 'flight-unknown';
+      const dep = new Date(flight[cols.departureTime]);
+      return `
+        <tr data-flight-number="${flightNumber}">
+          <td class="flightNumCell">${flightNumber}</td>
+          <td>${flight[cols.origin]} → ${flight[cols.destination]}</td>
+          <td>${dep.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</td>
+          <td><span class="statusPill ${pillClass}">${statusLabel}</span></td>
+        </tr>
+      `;
+    }
+
+    async function loadStatusBoard() {
+      const bodyEl = document.getElementById('statusBoardBody');
+      const errorEl = document.getElementById('statusBoardError');
+      errorEl.textContent = '';
+      bodyEl.innerHTML = '<tr><td colspan="4" class="tripsLoading">Loading flights…</td></tr>';
+
+      if (!supabaseClient) {
+        bodyEl.innerHTML = '';
+        errorEl.textContent = 'Set up your Supabase keys first — see the warning above.';
+        return;
+      }
+      const cols = FLIGHTS_CONFIG.columns;
+      try {
+        const { data, error } = await withTimeout(
+          supabaseClient
+            .from(FLIGHTS_CONFIG.table)
+            .select(`${cols.flightNumber}, ${cols.origin}, ${cols.destination}, ${cols.departureTime}, ${cols.status}`)
+            .order(cols.departureTime, { ascending: true }),
+          10000,
+        );
+        if (error) {
+          bodyEl.innerHTML = '';
+          errorEl.textContent = 'Could not load the flight board. Please try again.';
+          console.error(error);
+          return;
+        }
+        const rows = data || [];
+        bodyEl.innerHTML = rows.length
+          ? rows.map(renderStatusBoardRow).join('')
+          : '<tr><td colspan="4" class="tripsEmpty">No flights found.</td></tr>';
+      } catch (err) {
+        bodyEl.innerHTML = '';
+        if (err && err.message === 'TIMEOUT') {
+          errorEl.textContent = 'This is taking longer than expected. Please check your connection and try again.';
+        } else {
+          errorEl.textContent = 'Could not load the flight board. Please try again.';
+          console.error(err);
+        }
+      }
+    }
+
+    document.getElementById('statusBoardRefreshBtn').addEventListener('click', loadStatusBoard);
+    document.getElementById('statusBoardBody').addEventListener('click', (e) => {
+      const row = e.target.closest('tr[data-flight-number]');
+      if (!row) return;
+      const flightNumber = row.dataset.flightNumber;
+      document.getElementById('statusFlightNumber').value = flightNumber;
+      lookupFlightStatus(flightNumber);
+      document.getElementById('statusLookupResult').scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
 
     // ---- S1-06: Booking/passenger form + Reservation Service ----
@@ -3275,6 +3381,11 @@
     // already the one showing by default in the markup; this just syncs the
     // nav highlight to match).
     showPage('home');
+
+    // The all-flights board is public data (no login required, same as
+    // flight search) so it loads immediately rather than waiting for
+    // someone to actually click into the Flight status page.
+    if (supabaseClient) loadStatusBoard();
 
     // ---- Restore session on page load ----
     (async () => {
