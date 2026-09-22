@@ -84,6 +84,13 @@
   nav {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
+    /* Sticky (not fixed) so it docks at the top once you scroll to it,
+       without pulling it out of the document flow -- no extra top-padding
+       spacer needed elsewhere, and it naturally sits below the promo strip
+       until the promo strip scrolls out from above it. */
+    position: sticky;
+    top: 0;
+    z-index: 20;
   }
   .navRow {
     display: flex;
@@ -282,6 +289,7 @@
   .success { color: var(--success); font-size: 0.9rem; margin-top: 10px; }
   .hint { font-size: 0.8rem; color: var(--text-soft); }
   .hidden { display: none !important; }
+  .navLinks a.active { color: var(--brand); }
   .setup-warning {
     background: #FFF4E5; border: 1px solid #FFD59A; padding: 14px 24px;
     font-size: 0.85rem; color: #6B4A16;
@@ -436,7 +444,7 @@
 
   <div class="promo">
     <strong>Fall Fare Sale:</strong> Nonstop routes from $99 one-way. Book by Friday.
-    <a href="#search">See fares</a>
+    <a href="#search" data-page="home">See fares</a>
   </div>
 
   <div id="configWarning" class="setup-warning hidden">
@@ -445,7 +453,7 @@
 
   <nav>
     <div class="wrap navRow">
-      <a href="#top" class="wordmark">
+      <a href="#top" class="wordmark" data-page="home">
         <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
           <defs>
             <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
@@ -463,24 +471,25 @@
         </span>
       </a>
       <ul class="navLinks">
-        <li><a href="#search">Flights</a></li>
-        <li><a href="#results">Destinations</a></li>
-        <li><a href="#trips">My Trips</a></li>
-        <li><a href="#account">Account</a></li>
-        <li id="navManagerLink" class="hidden"><a href="#manager">Manager</a></li>
+        <li><a href="#search" data-page="home">Flights</a></li>
+        <li><a href="#results" data-page="home">Destinations</a></li>
+        <li><a href="#trips" data-page="trips">My Trips</a></li>
+        <li><a href="#account" data-page="account">Account</a></li>
+        <li id="navManagerLink" class="hidden"><a href="#manager" data-page="manager">Manager</a></li>
       </ul>
       <div class="navRight">
         <span id="headerSignedOut">
-          <a href="#account" class="btn btn-ghost">Sign in</a>
+          <a href="#account" class="btn btn-ghost" data-page="account">Sign in</a>
         </span>
         <span id="headerSignedIn" class="hidden">
           Hi, <strong id="headerEmail"></strong>
-          <a href="#account" id="headerLogout" class="btn btn-ghost" style="margin-left:10px;">Log out</a>
+          <a href="#account" id="headerLogout" class="btn btn-ghost" style="margin-left:10px;" data-page="account">Log out</a>
         </span>
       </div>
     </div>
   </nav>
 
+  <div id="pageHome" class="page">
   <section class="hero" id="top" role="img" aria-label="Airplane flying beneath a sky full of white clouds">
     <div class="heroBg"></div>
     <div class="heroOverlay"></div>
@@ -565,7 +574,9 @@
       </div>
     </section>
   </div>
+  </div>
 
+  <div id="pageAccount" class="page hidden">
   <div class="accountSection">
     <div class="wrap">
       <section id="account">
@@ -658,7 +669,9 @@
       </section>
     </div>
   </div>
+  </div>
 
+  <div id="pageTrips" class="page hidden">
   <div class="accountSection" id="tripsSectionWrap">
     <div class="wrap">
       <section id="trips">
@@ -668,7 +681,7 @@
         </div>
 
         <div id="tripsLoggedOut" class="panel" style="max-width:480px;">
-          <p style="margin:0;">Please <a href="#account">sign in</a> to view your trips.</p>
+          <p style="margin:0;">Please <a href="#account" data-page="account">sign in</a> to view your trips.</p>
         </div>
 
         <div id="tripsLoggedIn" class="hidden">
@@ -678,7 +691,9 @@
       </section>
     </div>
   </div>
+  </div>
 
+  <div id="pageManager" class="page hidden">
   <div class="accountSection hidden" id="managerSectionWrap">
     <div class="wrap">
       <section id="manager">
@@ -769,6 +784,7 @@
         </div>
       </section>
     </div>
+  </div>
   </div>
 
   <footer class="wrap">
@@ -955,6 +971,59 @@
     const headerSignedOut = document.getElementById('headerSignedOut');
     const headerSignedIn = document.getElementById('headerSignedIn');
     const headerEmail = document.getElementById('headerEmail');
+
+    // -----------------------------------------------------------------------
+    // Single-page "views": Flights/Home, Account, My Trips, and Manager each
+    // live in their own top-level container (#pageHome/#pageAccount/
+    // #pageTrips/#pageManager) and only one is shown at a time, so switching
+    // between them doesn't mean scrolling past the others. This is client-
+    // side only (no real navigation/new tab/reload) -- every nav link and
+    // in-page "go to account" style link is tagged data-page="..." and
+    // intercepted below instead of doing its native anchor jump.
+    // -----------------------------------------------------------------------
+    const PAGE_IDS = { home: 'pageHome', account: 'pageAccount', trips: 'pageTrips', manager: 'pageManager' };
+    const PAGE_FOCUS_ANCHOR = { '#results': 'results' }; // scroll target within the page, keyed by the link's href
+
+    function showPage(page, focusAnchorId) {
+      // Manager is UI-gated the same way the nav link/section already are --
+      // this just stops someone from landing on a blank manager page by
+      // clicking a link that shouldn't have been visible to them in the
+      // first place (e.g. browser back/forward).
+      if (page === 'manager' && !(currentUserRole === 'admin' || currentUserRole === 'manager')) {
+        page = 'home';
+      }
+      if (!PAGE_IDS[page]) page = 'home';
+
+      Object.entries(PAGE_IDS).forEach(([name, id]) => {
+        document.getElementById(id).classList.toggle('hidden', name !== page);
+      });
+      document.querySelectorAll('.navLinks a[data-page]').forEach((a) => {
+        a.classList.toggle('active', a.dataset.page === page);
+      });
+
+      if (focusAnchorId) {
+        const el = document.getElementById(focusAnchorId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
+      }
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    // Delegated click handler: any link tagged data-page="..." navigates
+    // between views instead of doing a normal anchor jump. Links that already
+    // have their own click handler (forgot-password, log out) call
+    // preventDefault() themselves first -- since target listeners run before
+    // ancestor listeners in the bubble phase, checking defaultPrevented here
+    // correctly skips those rather than double-handling the click.
+    document.body.addEventListener('click', (e) => {
+      if (e.defaultPrevented) return;
+      const link = e.target.closest('a[data-page]');
+      if (!link) return;
+      e.preventDefault();
+      showPage(link.dataset.page, PAGE_FOCUS_ANCHOR[link.getAttribute('href')] || null);
+    });
 
     // ---- S1-06: Booking/passenger form + Reservation Service ----
     // Tracks who's signed in (needed to attach reservations to a user_id)
@@ -1277,7 +1346,7 @@
 
     function openBookingModal(flight) {
       if (!currentUser) {
-        document.getElementById('account').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        showPage('account');
         document.getElementById('loginError').textContent = 'Please log in to book a flight.';
         return;
       }
@@ -2074,7 +2143,7 @@
       // on every silent session restore (page refresh, coming back from a
       // deep link), which would be a jarring surprise scroll.
       if (canViewManagerDashboard && isFreshLogin) {
-        document.getElementById('manager').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        showPage('manager');
       }
     }
 
@@ -2545,8 +2614,22 @@
       headerSignedIn.classList.add('hidden');
       document.getElementById('navManagerLink').classList.add('hidden');
       document.getElementById('managerSectionWrap').classList.add('hidden');
+      document.getElementById('mgrRolePanel').classList.add('hidden');
       loadMyTrips();
+
+      // The Manager page has no logged-out fallback content (unlike Trips/
+      // Account, which show a "please sign in" message) -- if that's where
+      // whoever just logged out happens to be, bounce back to Home instead
+      // of leaving them looking at a blank page.
+      if (!document.getElementById('pageManager').classList.contains('hidden')) {
+        showPage('home');
+      }
     }
+
+    // Mark "Flights" active in the nav on first load (the Home page is
+    // already the one showing by default in the markup; this just syncs the
+    // nav highlight to match).
+    showPage('home');
 
     // ---- Restore session on page load ----
     (async () => {
