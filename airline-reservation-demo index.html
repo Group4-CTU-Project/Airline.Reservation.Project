@@ -2210,10 +2210,16 @@
       // isn't blocked from the capability, just from this particular button.
       const canViewManagerDashboard = currentUserRole === 'admin' || currentUserRole === 'manager';
       const canSeeRolePanel = currentUserRole === 'manager';
-      // S2-04/PB-10: revenue and sales/cancellation reporting stays
-      // admin-only, same split as the rest of this file -- manager gets
-      // reservation tracking, admin gets that plus revenue.
-      const canSeeRevenuePanel = currentUserRole === 'admin';
+      // S2-04/PB-10: sales/cancellation reporting is now admin-or-manager
+      // too (widened from admin-only -- see
+      // 20260921070000_widen_revenue_reporting_to_manager.sql). Revenue is
+      // the one thing manager didn't originally get; that's no longer the
+      // case, so at this point canSeeRevenuePanel is just
+      // canViewManagerDashboard restated -- kept as its own flag/RPC-role
+      // check rather than folded together, so a future "manager loses X"
+      // change only touches this one line instead of splitting
+      // canViewManagerDashboard apart again.
+      const canSeeRevenuePanel = currentUserRole === 'admin' || currentUserRole === 'manager';
       document.getElementById('navManagerLink').classList.toggle('hidden', !canViewManagerDashboard);
       document.getElementById('managerSectionWrap').classList.toggle('hidden', !canViewManagerDashboard);
       document.getElementById('mgrRolePanel').classList.toggle('hidden', !canSeeRolePanel);
@@ -2591,7 +2597,7 @@
 
     async function loadManagerDashboard() {
       const tasks = [loadManagerStatTiles(), loadManagerReservations()];
-      if (currentUserRole === 'admin') tasks.push(loadRevenueDashboard());
+      if (currentUserRole === 'admin' || currentUserRole === 'manager') tasks.push(loadRevenueDashboard());
       await Promise.all(tasks);
     }
 
