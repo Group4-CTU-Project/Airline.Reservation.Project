@@ -4,7 +4,7 @@ A Sprint 1 demo project for an airline reservation system, built with a static H
 
 ## Structure
 
-- `airline-reservation-demo.html` — the demo app. Open it directly in a browser (no build step). On first load, replace `SUPABASE_URL` and `SUPABASE_ANON_KEY` near the bottom of the file with your own Supabase project's values (Settings → API).
+- `index.html` — the demo app. Open it directly in a browser (no build step). On first load, replace `SUPABASE_URL` and `SUPABASE_ANON_KEY` near the bottom of the file with your own Supabase project's values (Settings → API).
 - `migrations/` — SQL migrations, in the order they should be run, based on their timestamp prefix (`YYYYMMDDHHMMSS_description.sql`). Apply them in order against your Supabase project.
 
 ## Features
