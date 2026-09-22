@@ -396,6 +396,28 @@
   .statusPill.pending { background: #FFF4E5; color: #B4720B; }
   .statusPill.payment_failed { background: #FCE8E8; color: #B00020; }
   .statusPill.cancelled { background: #EEF0F3; color: #64748B; }
+  /* ---- S2-02/PB-07: flight operational status (separate vocabulary from
+     the reservation statuses above -- a flight is scheduled/delayed/
+     boarding/departed/landed/cancelled, not confirmed/pending). Reuses
+     .statusPill's shape; "cancelled" is intentionally the same red as a
+     cancelled reservation so the color means the same thing everywhere in
+     the app. Anything not in this list (a status value we don't know
+     about) falls back to the neutral "scheduled" look rather than
+     rendering unstyled. */
+  .statusPill.flight-scheduled, .statusPill.flight-unknown { background: #E9F1FB; color: var(--chart-revenue); }
+  .statusPill.flight-boarding { background: #E6F7F0; color: var(--brand-dark); }
+  .statusPill.flight-departed { background: #E6F7F0; color: var(--brand-dark); }
+  .statusPill.flight-landed { background: #E6F7EE; color: #1E8E5A; }
+  .statusPill.flight-delayed { background: #FFF4E5; color: var(--gold-dark); }
+  .statusPill.flight-diverted { background: #FFF4E5; color: var(--gold-dark); }
+  .statusPill.flight-cancelled { background: #FCE8E8; color: #B00020; }
+  .statusCard {
+    border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px;
+    background: var(--surface); box-shadow: 0 1px 2px rgba(10,37,64,0.06);
+  }
+  .statusCard .route { font-weight: 800; color: var(--ink); font-size: 1.15rem; margin-top: 10px; }
+  .statusCard .when { color: var(--text-soft); font-size: 0.88rem; margin-top: 6px; }
+  .statusCard .flightNum { font-size: 0.78rem; color: var(--text-soft); letter-spacing: 0.03em; }
   .tripsEmpty { color: var(--text-soft); font-size: 0.9rem; padding: 6px 0 2px; }
   .tripsLoading { color: var(--text-soft); font-size: 0.9rem; padding: 6px 0 2px; }
 
@@ -594,6 +616,7 @@
       <ul class="navLinks" id="navLinksList">
         <li><a href="#search" data-page="home">Flights</a></li>
         <li><a href="#results" data-page="home">Destinations</a></li>
+        <li><a href="#status-lookup" data-page="status">Flight status</a></li>
         <li><a href="#trips" data-page="trips">My Trips</a></li>
         <li><a href="#account" data-page="account">Account</a></li>
         <li id="navManagerLink" class="hidden"><a href="#manager" data-page="manager">Manager</a></li>
@@ -700,6 +723,30 @@
         </div>
       </div>
     </section>
+  </div>
+  </div>
+
+  <div id="pageStatus" class="page hidden">
+  <div class="accountSection">
+    <div class="wrap">
+      <section id="status-lookup">
+        <div class="sectionHead">
+          <h2>Flight status</h2>
+          <p>Look up a flight's current status by flight number.</p>
+        </div>
+
+        <div class="panel" style="max-width:480px;">
+          <form id="statusLookupForm">
+            <label for="statusFlightNumber">Flight number</label>
+            <input type="text" id="statusFlightNumber" placeholder="CN001" required autocomplete="off" style="text-transform:uppercase;" />
+            <button type="submit" id="statusLookupBtn" class="btn btn-primary btn-block" style="margin-top:16px;">Check status</button>
+          </form>
+          <div class="error" id="statusLookupError"></div>
+        </div>
+
+        <div id="statusLookupResult" style="max-width:480px; margin-top:20px;"></div>
+      </section>
+    </div>
   </div>
   </div>
 
@@ -1128,6 +1175,9 @@
         seatsAvailable: 'seats_available',
         // No airline column in this table — renderFlightCard falls back to "Cloud Nine".
         airline: null,
+        // S2-02/PB-07: flight-status lookup (20260922000000_add_flight_status_lookup.sql).
+        flightNumber: 'flight_number',
+        status: 'status',
       },
     };
 
@@ -1164,7 +1214,7 @@
     // in-page "go to account" style link is tagged data-page="..." and
     // intercepted below instead of doing its native anchor jump.
     // -----------------------------------------------------------------------
-    const PAGE_IDS = { home: 'pageHome', account: 'pageAccount', trips: 'pageTrips', manager: 'pageManager' };
+    const PAGE_IDS = { home: 'pageHome', status: 'pageStatus', account: 'pageAccount', trips: 'pageTrips', manager: 'pageManager' };
     const PAGE_FOCUS_ANCHOR = { '#results': 'results' }; // scroll target within the page, keyed by the link's href
 
     function showPage(page, focusAnchorId) {
@@ -1206,6 +1256,112 @@
       if (!link) return;
       e.preventDefault();
       showPage(link.dataset.page, PAGE_FOCUS_ANCHOR[link.getAttribute('href')] || null);
+    });
+
+    // ---------------------------------------------------------------------
+    // S2-02 / PB-07: flight-status lookup.
+    //
+    // Reuses the same direct `.from('flights')` select the home-page search
+    // already does (see FLIGHTS_CONFIG above) — flights is public-select
+    // with no login required, so this works for signed-out visitors too,
+    // same as search.
+    // ---------------------------------------------------------------------
+
+    // Labels/pill classes for flights.status. Anything that comes back that
+    // isn't in this list still renders (falls back to "flight-unknown")
+    // instead of showing a blank/unstyled pill.
+    const FLIGHT_STATUS_LABELS = {
+      scheduled: 'Scheduled',
+      boarding: 'Boarding',
+      departed: 'Departed',
+      landed: 'Landed',
+      delayed: 'Delayed',
+      diverted: 'Diverted',
+      cancelled: 'Cancelled',
+    };
+
+    // Wraps a promise so a hung request (Supabase unreachable, slow network)
+    // fails fast with a distinct, recognizable error instead of leaving the
+    // lookup spinning forever with no feedback.
+    function withTimeout(promise, ms) {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms)),
+      ]);
+    }
+
+    function renderStatusCard(flight) {
+      const cols = FLIGHTS_CONFIG.columns;
+      const statusKey = String(flight[cols.status] || 'scheduled').toLowerCase();
+      const statusLabel = FLIGHT_STATUS_LABELS[statusKey] || (flight[cols.status] || 'Unknown');
+      const pillClass = FLIGHT_STATUS_LABELS[statusKey] ? `flight-${statusKey}` : 'flight-unknown';
+      const dep = new Date(flight[cols.departureTime]);
+      const arr = new Date(flight[cols.arrivalTime]);
+      const fmt = (d) => d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+
+      return `
+        <div class="statusCard">
+          <span class="statusPill ${pillClass}">${statusLabel}</span>
+          <div class="flightNum">Flight ${flight[cols.flightNumber]}</div>
+          <div class="route">${flight[cols.origin]} → ${flight[cols.destination]}</div>
+          <div class="when">Departs ${fmt(dep)}</div>
+          <div class="when">Arrives ${fmt(arr)}</div>
+        </div>
+      `;
+    }
+
+    document.getElementById('statusLookupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('statusLookupError');
+      const resultEl = document.getElementById('statusLookupResult');
+      const btn = document.getElementById('statusLookupBtn');
+      errorEl.textContent = '';
+      resultEl.innerHTML = '';
+
+      if (!supabaseClient) { errorEl.textContent = 'Set up your Supabase keys first — see the warning above.'; return; }
+
+      const flightNumber = document.getElementById('statusFlightNumber').value.trim().toUpperCase();
+      if (!flightNumber) return;
+
+      const cols = FLIGHTS_CONFIG.columns;
+      btn.disabled = true;
+      btn.textContent = 'Checking…';
+      resultEl.innerHTML = '<div class="tripsLoading">Looking up flight status…</div>';
+
+      try {
+        const { data, error } = await withTimeout(
+          supabaseClient
+            .from(FLIGHTS_CONFIG.table)
+            .select(`${cols.flightNumber}, ${cols.origin}, ${cols.destination}, ${cols.departureTime}, ${cols.arrivalTime}, ${cols.status}`)
+            .eq(cols.flightNumber, flightNumber)
+            .maybeSingle(),
+          10000,
+        );
+
+        if (error) {
+          resultEl.innerHTML = '';
+          errorEl.textContent = 'Flight status is temporarily unavailable. Please try again in a moment.';
+          console.error(error);
+          return;
+        }
+        if (!data) {
+          resultEl.innerHTML = '';
+          errorEl.textContent = `No flight found with number "${flightNumber}". Double-check the number and try again.`;
+          return;
+        }
+        resultEl.innerHTML = renderStatusCard(data);
+      } catch (err) {
+        resultEl.innerHTML = '';
+        if (err && err.message === 'TIMEOUT') {
+          errorEl.textContent = 'This is taking longer than expected. Please check your connection and try again.';
+        } else {
+          errorEl.textContent = 'Flight status is temporarily unavailable. Please try again in a moment.';
+          console.error(err);
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Check status';
+      }
     });
 
     // ---- S1-06: Booking/passenger form + Reservation Service ----
