@@ -276,15 +276,49 @@
 
   /* ---- Account section ---- */
   .accountSection { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  /* The Manager Dashboard's panels/chart cards/stat tiles are now solid
+     white so they read as distinct cards -- but .accountSection itself is
+     also white, so without this override the cards would still blend into
+     their own wrapper. Give just this section the app's pale page-blue
+     instead, matching the same white-card-on-tinted-background contrast
+     used everywhere else in the app. */
+  #managerSectionWrap { background: var(--bg); }
   .accountGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   @media (max-width: 700px) { .accountGrid { grid-template-columns: 1fr; } }
   .panel {
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 22px;
-    background: var(--bg);
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgba(10,37,64,0.05), 0 6px 16px rgba(10,37,64,0.05);
   }
   .panel h2 { font-size: 1.1rem; margin: 0 0 4px; }
+  /* Bold full-width colored header band (instead of a thin hairline) so a
+     panel reads as its own distinct, colored card rather than blending into
+     the white/near-white page. --panel-accent-color picks the band's color
+     per panel; the h2/h3 immediately inside gets pulled out to white text on
+     that band via negative margins that bleed to the card's edges. */
+  .panel-accent {
+    border-top: none;
+    padding-top: 0;
+    overflow: hidden;
+  }
+  .panel-accent > h2:first-child,
+  .panel-accent > h3:first-child,
+  .panel-accent > h4:first-child,
+  .panel-accent > .sectionHead:first-child {
+    margin: 0 -22px 16px -22px;
+    padding: 16px 22px;
+    background: var(--panel-accent-color, var(--brand));
+    color: #fff;
+  }
+  .panel-accent > h2:first-child { border-radius: 0; }
+  .panel-accent > .sectionHead:first-child h3,
+  .panel-accent > .sectionHead:first-child p {
+    color: #fff;
+    margin: 0;
+  }
+  .panel-accent > .sectionHead:first-child p { opacity: 0.9; margin-top: 4px; }
   .panel label { display: block; margin-top: 14px; font-weight: 700; font-size: 0.85rem; color: var(--text); }
   .panel input {
     width: 100%; padding: 10px; margin-top: 6px; border: 1px solid var(--border);
@@ -335,21 +369,37 @@
   @media (max-width: 700px) { .statTiles { grid-template-columns: 1fr 1fr; } }
   .statTile {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 16px 18px;
+    padding: 14px 18px 16px; border-top-width: 4px; box-shadow: 0 1px 2px rgba(10,37,64,0.06);
   }
   .statTile .statNum { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 1.6rem; color: var(--ink); }
   .statTile .statLabel { font-size: 0.8rem; color: var(--text-soft); font-weight: 700; margin-top: 2px; }
+  /* Tinted background + a bolder solid top border per status, reusing the
+     same palette as .statusPill below so a "Confirmed" tile and a
+     "Confirmed" pill on a trip card read as the same color language
+     everywhere in the app -- the heavier top border is what actually makes
+     the tiles pop against the panel instead of just tinting the fill. */
+  .statTile.confirmed { background: #E6F7EE; border-color: #B8E6CC; border-top-color: #1E8E5A; }
   .statTile.confirmed .statNum { color: #1E8E5A; }
+  .statTile.pending { background: #FFF4E5; border-color: #F5D9A3; border-top-color: var(--gold-dark); }
   .statTile.pending .statNum { color: var(--gold-dark); }
+  .statTile.payment_failed { background: #FCE8E8; border-color: #F3B7B7; border-top-color: #B00020; }
   .statTile.payment_failed .statNum { color: #B00020; }
+  .statTile.cancelled { background: #EEF0F3; border-color: #D7DCE3; border-top-color: #64748B; }
   .statTile.cancelled .statNum { color: var(--text-soft); }
-  .statTile.revenue .statNum { color: var(--brand); }
+  .statTile.revenue { background: #E9F1FB; border-color: #C3DBF5; border-top-color: var(--chart-revenue); }
+  .statTile.revenue .statNum { color: var(--chart-revenue); }
+  .statTile.rate { background: #FFF4E5; border-color: #F5D9A3; border-top-color: var(--gold-dark); }
   .statTile.rate .statNum { color: var(--gold-dark); }
 
   /* ---- S2-04/PB-10: sales/revenue charts ---- */
   .chartRow { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
   @media (max-width: 780px) { .chartRow { grid-template-columns: 1fr; } }
-  .chartCard { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: #fff; }
+  .chartCard {
+    border: 1px solid var(--border); border-radius: 12px 12px 10px 10px; background: #fff;
+    overflow: hidden; box-shadow: 0 1px 2px rgba(10,37,64,0.05), 0 6px 16px rgba(10,37,64,0.05);
+  }
+  .chartCard .chartAccent { height: 6px; }
+  .chartCard .chartCardBody { padding: 16px; }
   .chartCard h4 { margin: 0 0 4px; font-size: 0.92rem; color: var(--ink); }
   .chartCard .hint { margin-bottom: 10px; }
   .chartLegend { display: flex; gap: 16px; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 8px; }
@@ -735,7 +785,7 @@
 
         <div class="statTiles" id="managerStatTiles"></div>
 
-        <div class="panel hidden" id="mgrRevenuePanel" style="margin-top:20px;">
+        <div class="panel panel-accent hidden" id="mgrRevenuePanel" style="margin-top:20px; --panel-accent-color:var(--chart-revenue);">
           <div class="sectionHead" style="margin-bottom:12px;">
             <h3 style="margin:0;">Sales &amp; cancellations</h3>
             <p style="margin:4px 0 0; font-size:0.85rem;">Revenue and booking counts are by the day a reservation was booked; cancellations are by the day it was cancelled.</p>
@@ -760,21 +810,27 @@
 
           <div class="chartRow">
             <div class="chartCard">
+              <div class="chartAccent" style="background:var(--chart-revenue);"></div>
+              <div class="chartCardBody">
               <h4>Daily revenue</h4>
               <p class="hint">Confirmed bookings only.</p>
               <div class="chartSvgWrap" id="mgrRevenueChart"></div>
+              </div>
             </div>
             <div class="chartCard">
+              <div class="chartAccent" style="background:linear-gradient(90deg, var(--chart-bookings) 0 50%, var(--chart-cancellations) 50% 100%);"></div>
+              <div class="chartCardBody">
               <h4>Bookings vs. cancellations</h4>
               <div class="chartLegend">
                 <span><i style="background:var(--chart-bookings)"></i>Bookings</span>
                 <span><i style="background:var(--chart-cancellations)"></i>Cancellations</span>
               </div>
               <div class="chartSvgWrap" id="mgrBookingsChart"></div>
+              </div>
             </div>
           </div>
 
-          <div class="panel" style="margin-top:18px; background:var(--bg);">
+          <div class="panel panel-accent" style="margin-top:18px; --panel-accent-color:var(--brand);">
             <h4 style="margin:0 0 10px;">Top routes by revenue</h4>
             <div id="mgrTopRoutes"></div>
           </div>
@@ -782,7 +838,7 @@
           <div class="error" id="mgrRevenueError"></div>
         </div>
 
-        <div class="panel hidden" id="mgrRolePanel" style="margin-top:20px;">
+        <div class="panel panel-accent hidden" id="mgrRolePanel" style="margin-top:20px; --panel-accent-color:var(--gold-dark);">
           <div class="sectionHead" style="margin-bottom:12px;">
             <h3 style="margin:0;">Assign a role</h3>
             <p style="margin:4px 0 0; font-size:0.85rem;">Look up an account by email and set its role. Use this to give a new hire admin access instead of editing it in Supabase directly. You can't change your own role here.</p>
@@ -809,8 +865,9 @@
           <div class="success" id="mgrRoleSuccess"></div>
         </div>
 
-        <div class="panel" style="margin-top:20px;">
-          <form id="managerFilterForm" class="managerFilterGrid">
+        <div class="panel panel-accent" style="margin-top:20px; --panel-accent-color:var(--ink);">
+          <h3 style="margin:0;">Filter reservations</h3>
+          <form id="managerFilterForm" class="managerFilterGrid" style="margin-top:16px;">
             <div>
               <label for="mgrFilterStatus">Status</label>
               <select id="mgrFilterStatus">
