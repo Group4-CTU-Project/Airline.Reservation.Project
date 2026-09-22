@@ -2216,11 +2216,26 @@
         }
 
         currentUserFullName = fullName;
+        headerEmail.textContent = firstNameOf(currentUserFullName, currentUser.email);
         successEl.textContent = 'Profile updated.';
       } finally {
         btn.disabled = false;
       }
     });
+
+    // ---- First-name helper for the nav greeting ----
+    // The nav greeting used to show the full email address ("Hi,
+    // matthew.sucku@student.ctuonline.edu"), which is long enough to push
+    // the nav links off onto a second row / cause them to drop on mobile.
+    // Pulling just the first name off the account's full_name keeps the
+    // greeting short. Falls back to the email's local part (before the @)
+    // if the account has no full_name saved yet, so the greeting never
+    // renders empty.
+    function firstNameOf(fullName, emailFallback) {
+      const trimmed = (fullName || '').trim();
+      if (trimmed) return trimmed.split(/\s+/)[0];
+      return (emailFallback || '').split('@')[0];
+    }
 
     // ---- Profile lookup (role + full_name) ----
     async function fetchProfile(userId) {
@@ -2244,13 +2259,16 @@
       headerSignedOut.classList.add('hidden');
       headerSignedIn.classList.remove('hidden');
       userEmailEl.textContent = user.email;
-      headerEmail.textContent = user.email;
+      // Show the email as a quick fallback until the profile (with
+      // full_name) loads just below, so the greeting isn't blank momentarily.
+      headerEmail.textContent = firstNameOf('', user.email);
 
       const profile = await fetchProfile(user.id);
       userRoleEl.textContent = profile.role;
       currentUserRole = profile.role;
       currentUserFullName = profile.full_name || '';
       document.getElementById('profileFullName').value = currentUserFullName;
+      headerEmail.textContent = firstNameOf(currentUserFullName, user.email);
       document.getElementById('profileError').textContent = '';
       document.getElementById('profileSuccess').textContent = '';
 
