@@ -22,7 +22,7 @@ To keep history clean and avoid overwriting each other's work:
 2. **Open a pull request** for any change, even a small one, so it's easy to see what changed and to review before it lands on `main`.
 3. **Merge through the PR**, not by re-uploading the same file to `main`.
 
-This avoids duplicate files (like the old `airline-reservation-demo (N).html` copies) and lost work sitting only on someone's laptop.
+This avoids duplicate files (like the old `index.html` copies) and lost work sitting only on someone's laptop.
 
 ## How to create a branch (step by step)
 
