@@ -20,6 +20,13 @@
     --text: #1F2A3C;
     --text-soft: #64748B;
     --border: #DCE6F2;
+    /* Chart series colors (validated pair -- see 20260921060000 migration's
+       companion dashboard code; worst-case CVD ΔE 21.6, normal-vision ΔE
+       32.3, both well clear of the 8/15 floors, so bookings vs.
+       cancellations reads correctly for colorblind viewers too). */
+    --chart-revenue: #2a78d6;
+    --chart-bookings: #2a78d6;
+    --chart-cancellations: #e34948;
   }
   * { box-sizing: border-box; }
   body {
@@ -336,6 +343,30 @@
   .statTile.pending .statNum { color: var(--gold-dark); }
   .statTile.payment_failed .statNum { color: #B00020; }
   .statTile.cancelled .statNum { color: var(--text-soft); }
+  .statTile.revenue .statNum { color: var(--brand); }
+  .statTile.rate .statNum { color: var(--gold-dark); }
+
+  /* ---- S2-04/PB-10: sales/revenue charts ---- */
+  .chartRow { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+  @media (max-width: 780px) { .chartRow { grid-template-columns: 1fr; } }
+  .chartCard { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: #fff; }
+  .chartCard h4 { margin: 0 0 4px; font-size: 0.92rem; color: var(--ink); }
+  .chartCard .hint { margin-bottom: 10px; }
+  .chartLegend { display: flex; gap: 16px; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 8px; }
+  .chartLegend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+  .chartSvgWrap svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .chartEmpty { font-size: 0.85rem; color: var(--text-soft); padding: 20px 0; text-align: center; }
+  .chartTooltip {
+    position: fixed; pointer-events: none; z-index: 60;
+    background: var(--ink); color: #fff; font-size: 0.75rem; font-weight: 700;
+    padding: 6px 10px; border-radius: 6px; white-space: nowrap;
+    opacity: 0; transition: opacity 0.1s ease;
+  }
+  .chartTooltip.visible { opacity: 1; }
+  .routesTable { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .routesTable th, .routesTable td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .routesTable th { color: var(--text-soft); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .routesTable td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
   .managerFilterGrid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 16px; align-items: end;
@@ -704,6 +735,53 @@
 
         <div class="statTiles" id="managerStatTiles"></div>
 
+        <div class="panel hidden" id="mgrRevenuePanel" style="margin-top:20px;">
+          <div class="sectionHead" style="margin-bottom:12px;">
+            <h3 style="margin:0;">Sales &amp; cancellations</h3>
+            <p style="margin:4px 0 0; font-size:0.85rem;">Revenue and booking counts are by the day a reservation was booked; cancellations are by the day it was cancelled.</p>
+          </div>
+
+          <form id="mgrRevenueFilterForm" class="managerFilterGrid" style="margin-bottom:20px;">
+            <div>
+              <label for="mgrRevDateFrom">From</label>
+              <input type="date" id="mgrRevDateFrom" required />
+            </div>
+            <div>
+              <label for="mgrRevDateTo">To</label>
+              <input type="date" id="mgrRevDateTo" required />
+            </div>
+            <div class="managerFilterActions">
+              <button type="submit" id="mgrRevApplyBtn" class="btn btn-primary">Apply</button>
+              <button type="button" id="mgrRevResetBtn" class="btn btn-ghost">Last 30 days</button>
+            </div>
+          </form>
+
+          <div class="statTiles" id="mgrRevenueStatTiles"></div>
+
+          <div class="chartRow">
+            <div class="chartCard">
+              <h4>Daily revenue</h4>
+              <p class="hint">Confirmed bookings only.</p>
+              <div class="chartSvgWrap" id="mgrRevenueChart"></div>
+            </div>
+            <div class="chartCard">
+              <h4>Bookings vs. cancellations</h4>
+              <div class="chartLegend">
+                <span><i style="background:var(--chart-bookings)"></i>Bookings</span>
+                <span><i style="background:var(--chart-cancellations)"></i>Cancellations</span>
+              </div>
+              <div class="chartSvgWrap" id="mgrBookingsChart"></div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-top:18px; background:var(--bg);">
+            <h4 style="margin:0 0 10px;">Top routes by revenue</h4>
+            <div id="mgrTopRoutes"></div>
+          </div>
+
+          <div class="error" id="mgrRevenueError"></div>
+        </div>
+
         <div class="panel hidden" id="mgrRolePanel" style="margin-top:20px;">
           <div class="sectionHead" style="margin-bottom:12px;">
             <h3 style="margin:0;">Assign a role</h3>
@@ -790,6 +868,8 @@
   <footer class="wrap">
     Cloud Nine Airline Reservations — a Sprint 1 demo project.
   </footer>
+
+  <div id="chartTooltip" class="chartTooltip"></div>
 
   <div id="bookingModal" class="modalOverlay hidden">
     <div class="modalCard">
@@ -2130,9 +2210,14 @@
       // isn't blocked from the capability, just from this particular button.
       const canViewManagerDashboard = currentUserRole === 'admin' || currentUserRole === 'manager';
       const canSeeRolePanel = currentUserRole === 'manager';
+      // S2-04/PB-10: revenue and sales/cancellation reporting stays
+      // admin-only, same split as the rest of this file -- manager gets
+      // reservation tracking, admin gets that plus revenue.
+      const canSeeRevenuePanel = currentUserRole === 'admin';
       document.getElementById('navManagerLink').classList.toggle('hidden', !canViewManagerDashboard);
       document.getElementById('managerSectionWrap').classList.toggle('hidden', !canViewManagerDashboard);
       document.getElementById('mgrRolePanel').classList.toggle('hidden', !canSeeRolePanel);
+      document.getElementById('mgrRevenuePanel').classList.toggle('hidden', !canSeeRevenuePanel);
 
       await refreshPaymentOnFile();
       await loadMyTrips();
@@ -2505,8 +2590,252 @@
     }
 
     async function loadManagerDashboard() {
-      await Promise.all([loadManagerStatTiles(), loadManagerReservations()]);
+      const tasks = [loadManagerStatTiles(), loadManagerReservations()];
+      if (currentUserRole === 'admin') tasks.push(loadRevenueDashboard());
+      await Promise.all(tasks);
     }
+
+    // -----------------------------------------------------------------------
+    // S2-04 / PB-10: sales tracker -- revenue summary, a daily revenue chart,
+    // a bookings-vs-cancellations chart, and a top-routes table. Admin only
+    // (see mgrRevenuePanel's visibility toggle in showLoggedIn and
+    // 20260921060000_add_revenue_reporting.sql, which gates every RPC this
+    // calls the same way).
+    //
+    // Chart rendering is a small hand-rolled SVG bar chart rather than a
+    // charting library -- this file has no external script dependencies
+    // anywhere else, and pulling one in just for two small bar charts would
+    // be the first network dependency the whole app has.
+    // -----------------------------------------------------------------------
+    function fmtISODate(d) {
+      return d.toISOString().slice(0, 10);
+    }
+
+    function last30DayRange() {
+      const to = new Date();
+      const from = new Date();
+      from.setDate(from.getDate() - 29);
+      return { from: fmtISODate(from), to: fmtISODate(to) };
+    }
+
+    function fmtCurrency(n) {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
+    }
+
+    function fmtPercent(n) {
+      return `${Math.round((n || 0) * 1000) / 10}%`;
+    }
+
+    function fmtShortDate(dayStr) {
+      // dayStr is a plain 'YYYY-MM-DD' from Postgres date -- parse as local,
+      // not UTC-midnight, so the label never drifts a day off in a
+      // west-of-UTC timezone.
+      const [y, m, d] = dayStr.split('-').map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
+    // ---- Shared tooltip, used by both charts ----
+    const chartTooltipEl = document.getElementById('chartTooltip');
+    function showChartTooltip(evt, html) {
+      chartTooltipEl.innerHTML = html;
+      chartTooltipEl.style.left = `${evt.clientX + 14}px`;
+      chartTooltipEl.style.top = `${evt.clientY + 14}px`;
+      chartTooltipEl.classList.add('visible');
+    }
+    function hideChartTooltip() {
+      chartTooltipEl.classList.remove('visible');
+    }
+
+    // Bar path with rounded top corners only, anchored to the baseline.
+    function roundedTopBarPath(x, y, w, h, r) {
+      if (h <= 0) return '';
+      r = Math.min(r, w / 2, h);
+      return `M${x},${y + h} L${x},${y + r} Q${x},${y} ${x + r},${y} `
+        + `L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y + h} Z`;
+    }
+
+    // Renders a small multi-series bar chart as inline SVG into `container`.
+    //   labels: string[] (x-axis categories, e.g. day labels)
+    //   series: [{ color, values: number[], tooltip(i) => html }]
+    // All series share one y-axis (never a dual-axis chart), so only call
+    // this with series that are the same unit (all dollars, all counts, …).
+    function renderBarChart(container, { labels, series, formatY }) {
+      if (!labels.length || series.every((s) => s.values.every((v) => !v))) {
+        container.innerHTML = '<div class="chartEmpty">No activity in this range.</div>';
+        return;
+      }
+
+      const width = 560;
+      const height = 200;
+      const padLeft = 44;
+      const padBottom = 24;
+      const padTop = 10;
+      const plotW = width - padLeft - 10;
+      const plotH = height - padTop - padBottom;
+
+      const maxVal = Math.max(1, ...series.flatMap((s) => s.values));
+      const gridSteps = 4;
+      const yFor = (v) => padTop + plotH - (v / maxVal) * plotH;
+
+      const groupW = plotW / labels.length;
+      const barGap = 3;
+      const barW = Math.max(2, (groupW - barGap * (series.length + 1)) / series.length);
+
+      let gridlines = '';
+      let yLabels = '';
+      for (let i = 0; i <= gridSteps; i++) {
+        const v = (maxVal / gridSteps) * i;
+        const y = yFor(v);
+        gridlines += `<line x1="${padLeft}" y1="${y}" x2="${width - 10}" y2="${y}" stroke="var(--border)" stroke-width="1" />`;
+        yLabels += `<text x="${padLeft - 8}" y="${y + 3}" text-anchor="end" font-size="9" fill="var(--text-soft)">${formatY(v)}</text>`;
+      }
+
+      let bars = '';
+      let xLabels = '';
+      labels.forEach((label, i) => {
+        const groupX = padLeft + i * groupW;
+        series.forEach((s, si) => {
+          const v = s.values[i] || 0;
+          const barH = plotH - (yFor(v) - padTop);
+          const barX = groupX + barGap + si * (barW + barGap);
+          const barY = yFor(v);
+          const path = roundedTopBarPath(barX, barY, barW, barH, 2.5);
+          if (path) {
+            bars += `<path d="${path}" fill="${s.color}" data-label="${label}" data-series="${si}" data-index="${i}" class="chartBarShape" />`;
+          }
+        });
+        // Thin every-other label on a dense axis so text never collides.
+        if (labels.length <= 12 || i % Math.ceil(labels.length / 12) === 0) {
+          xLabels += `<text x="${groupX + groupW / 2}" y="${height - 6}" text-anchor="middle" font-size="9" fill="var(--text-soft)">${label}</text>`;
+        }
+      });
+
+      container.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Bar chart">
+          ${gridlines}${yLabels}${bars}${xLabels}
+        </svg>
+      `;
+
+      container.querySelectorAll('.chartBarShape').forEach((el) => {
+        el.addEventListener('mousemove', (evt) => {
+          const i = Number(el.dataset.index);
+          const si = Number(el.dataset.series);
+          showChartTooltip(evt, series[si].tooltip(i));
+        });
+        el.addEventListener('mouseleave', hideChartTooltip);
+      });
+    }
+
+    async function loadRevenueDashboard() {
+      const errorEl = document.getElementById('mgrRevenueError');
+      errorEl.textContent = '';
+
+      const fromInput = document.getElementById('mgrRevDateFrom');
+      const toInput = document.getElementById('mgrRevDateTo');
+      if (!fromInput.value || !toInput.value) {
+        const range = last30DayRange();
+        fromInput.value = range.from;
+        toInput.value = range.to;
+      }
+      const dateFrom = fromInput.value;
+      const dateTo = toInput.value;
+
+      const [summaryRes, byDayRes, byRouteRes] = await Promise.all([
+        supabaseClient.rpc('get_revenue_summary', { p_date_from: dateFrom, p_date_to: dateTo }),
+        supabaseClient.rpc('get_revenue_by_day', { p_date_from: dateFrom, p_date_to: dateTo }),
+        supabaseClient.rpc('get_revenue_by_route', { p_date_from: dateFrom, p_date_to: dateTo, p_limit: 8 }),
+      ]);
+
+      if (summaryRes.error || byDayRes.error || byRouteRes.error) {
+        console.error('Revenue dashboard load failed:', summaryRes.error || byDayRes.error || byRouteRes.error);
+        errorEl.textContent = 'Could not load sales data. Try applying the date range again.';
+        return;
+      }
+
+      const summary = (summaryRes.data && summaryRes.data[0]) || {
+        total_revenue: 0, confirmed_count: 0, pending_count: 0, payment_failed_count: 0, cancelled_count: 0, cancellation_rate: 0,
+      };
+      document.getElementById('mgrRevenueStatTiles').innerHTML = `
+        <div class="statTile revenue">
+          <div class="statNum">${fmtCurrency(summary.total_revenue)}</div>
+          <div class="statLabel">Revenue</div>
+        </div>
+        <div class="statTile confirmed">
+          <div class="statNum">${summary.confirmed_count}</div>
+          <div class="statLabel">Confirmed bookings</div>
+        </div>
+        <div class="statTile cancelled">
+          <div class="statNum">${summary.cancelled_count}</div>
+          <div class="statLabel">Cancellations</div>
+        </div>
+        <div class="statTile rate">
+          <div class="statNum">${fmtPercent(summary.cancellation_rate)}</div>
+          <div class="statLabel">Cancellation rate</div>
+        </div>
+      `;
+
+      const days = byDayRes.data || [];
+      const dayLabels = days.map((r) => fmtShortDate(r.day));
+
+      renderBarChart(document.getElementById('mgrRevenueChart'), {
+        labels: dayLabels,
+        formatY: (v) => v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${Math.round(v)}`,
+        series: [{
+          color: 'var(--chart-revenue)',
+          values: days.map((r) => Number(r.revenue)),
+          tooltip: (i) => `${fmtShortDate(days[i].day)}<br>${fmtCurrency(days[i].revenue)}`,
+        }],
+      });
+
+      renderBarChart(document.getElementById('mgrBookingsChart'), {
+        labels: dayLabels,
+        formatY: (v) => Math.round(v).toString(),
+        series: [
+          {
+            color: 'var(--chart-bookings)',
+            values: days.map((r) => Number(r.bookings_count)),
+            tooltip: (i) => `${fmtShortDate(days[i].day)}<br>${days[i].bookings_count} booking${days[i].bookings_count === 1 ? '' : 's'}`,
+          },
+          {
+            color: 'var(--chart-cancellations)',
+            values: days.map((r) => Number(r.cancellations_count)),
+            tooltip: (i) => `${fmtShortDate(days[i].day)}<br>${days[i].cancellations_count} cancellation${days[i].cancellations_count === 1 ? '' : 's'}`,
+          },
+        ],
+      });
+
+      const routes = byRouteRes.data || [];
+      const routesEl = document.getElementById('mgrTopRoutes');
+      if (!routes.length) {
+        routesEl.innerHTML = '<p class="hint" style="margin:0;">No confirmed bookings in this range.</p>';
+      } else {
+        routesEl.innerHTML = `
+          <table class="routesTable">
+            <thead><tr><th>Route</th><th class="num">Bookings</th><th class="num">Revenue</th></tr></thead>
+            <tbody>
+              ${routes.map((r) => `
+                <tr>
+                  <td>${r.origin} → ${r.destination}</td>
+                  <td class="num">${r.bookings_count}</td>
+                  <td class="num">${fmtCurrency(r.revenue)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+    }
+
+    document.getElementById('mgrRevenueFilterForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      loadRevenueDashboard();
+    });
+    document.getElementById('mgrRevResetBtn').addEventListener('click', () => {
+      const range = last30DayRange();
+      document.getElementById('mgrRevDateFrom').value = range.from;
+      document.getElementById('mgrRevDateTo').value = range.to;
+      loadRevenueDashboard();
+    });
 
     document.getElementById('managerFilterForm').addEventListener('submit', (e) => {
       e.preventDefault();
