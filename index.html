@@ -529,6 +529,30 @@
   }
   #adminCancelReason:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
 
+  /* ---- S2-06/PB-13: change flight (rebooking) ---- */
+  #rebookModal .modalCard { max-width: 480px; }
+  .altList { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; margin-top: 6px; padding: 2px; }
+  .altOption {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%;
+    text-align: left; background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; font-family: inherit; cursor: pointer; color: var(--text);
+  }
+  .altOption:hover { border-color: var(--brand); }
+  .altOption:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+  .altOption.selected { border-color: var(--brand); background: #E6F7F0; box-shadow: inset 0 0 0 1px var(--brand); }
+  .altOption .altWhen { font-weight: 700; color: var(--ink); font-size: 0.92rem; }
+  .altOption .altSeats { font-size: 0.78rem; color: var(--text-soft); margin-top: 2px; }
+  .altOption .altPrice { text-align: right; flex-shrink: 0; }
+  .altOption .altNew { font-weight: 800; color: var(--brand-dark); }
+  .altDiff { font-size: 0.76rem; font-weight: 700; margin-top: 2px; }
+  .altDiff.up { color: var(--gold-dark); }
+  .altDiff.down { color: var(--success); }
+  .altDiff.same { color: var(--text-soft); }
+  .rebookNotice {
+    margin-top: 12px; padding: 12px 14px; border-radius: 8px; font-size: 0.88rem;
+    background: #E6F7EE; border: 1px solid #B8E6CC; color: var(--ink);
+  }
+
   footer { padding: 32px 0 48px; text-align: center; color: var(--text-soft); font-size: 0.82rem; }
 
   /* ---- S1-06: Booking modal ---- */
@@ -1217,6 +1241,30 @@
           <button type="submit" id="adminCancelSubmitBtn" class="btn btn-danger-solid" style="flex:1;">Cancel booking</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- S2-06/PB-13: change flight. Alternates come from get_alternate_flights();
+       rebook_reservation() re-checks every rule server-side. -->
+  <div id="rebookModal" class="modalOverlay hidden" role="dialog" aria-modal="true" aria-labelledby="rebookTitle">
+    <div class="modalCard">
+      <button type="button" id="rebookClose" class="modalClose" aria-label="Close">&times;</button>
+      <h2 id="rebookTitle" style="margin:0 0 4px;">Change flight</h2>
+      <p class="hint" style="margin:0;" id="rebookSubtitle">Pick another flight on the same route.</p>
+      <div class="bookingSummary" id="rebookSummary"></div>
+      <div id="rebookPickView">
+        <div style="font-weight:700; font-size:0.85rem;" id="rebookListLabel">Available flights</div>
+        <div class="altList" id="rebookAltList" role="listbox" aria-labelledby="rebookListLabel"></div>
+        <div class="error" id="rebookError"></div>
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button type="button" id="rebookBackBtn" class="btn btn-ghost" style="flex:1;">Keep current flight</button>
+          <button type="button" id="rebookSubmitBtn" class="btn btn-primary" style="flex:1;" disabled>Change flight</button>
+        </div>
+      </div>
+      <div id="rebookDoneView" class="hidden">
+        <div class="rebookNotice" id="rebookDoneText"></div>
+        <button type="button" id="rebookDoneBtn" class="btn btn-primary btn-block" style="margin-top:16px;">Done</button>
+      </div>
     </div>
   </div>
 
@@ -2765,6 +2813,11 @@
       const ticketBtn = statusKey === 'confirmed'
         ? `<button type="button" class="btn btn-primary viewTicketBtn" data-reservation-id="${trip.reservation_id}" style="margin-top:10px; font-size:0.8rem; padding:7px 14px;">View ticket</button>`
         : '';
+      // S2-06/PB-13: only confirmed trips that haven't departed can be changed
+      // (rebook_reservation() only accepts confirmed reservations).
+      const changeBtn = (statusKey === 'confirmed' && dep > new Date())
+        ? `<button type="button" class="btn btn-ghost changeFlightBtn" data-reservation-id="${trip.reservation_id}" style="margin-top:10px; font-size:0.8rem; padding:7px 14px;">Change flight</button>`
+        : '';
 
       return `
         <div class="tripCard">
@@ -2782,6 +2835,7 @@
             <div class="fare">$${Number(trip.price_paid).toFixed(2)}</div>
             ${paymentLine ? `<div class="hint" style="margin-top:6px;">${paymentLine}</div>` : ''}
             ${ticketBtn}
+            ${changeBtn}
             ${cancelBtn}
           </div>
         </div>
@@ -2924,6 +2978,12 @@
 
     // ---- Cancel a pending/confirmed trip, or view a confirmed trip's ticket (event delegation — cards re-render on every load) ----
     document.getElementById('myTripsList').addEventListener('click', async (e) => {
+      const changeBtn = e.target.closest('.changeFlightBtn');
+      if (changeBtn) {
+        const trip = lastTrips.find((t) => t.reservation_id === changeBtn.dataset.reservationId);
+        if (trip) openRebookModal(trip);
+        return;
+      }
       const viewBtn = e.target.closest('.viewTicketBtn');
       if (viewBtn) {
         const trip = lastTrips.find((t) => t.reservation_id === viewBtn.dataset.reservationId);
@@ -3426,6 +3486,160 @@
     });
 
     // -----------------------------------------------------------------------
+    // S2-06 / PB-13: Rebooking ("Change flight" on My Trips).
+    // get_alternate_flights() lists same-route scheduled flights with seats
+    // that still arrive before the return leg, priced with the same rules as
+    // a new booking. rebook_reservation() re-validates all of that, moves the
+    // seat count, keeps the seat number if it's free on the new flight, and
+    // records any fare difference in payment_adjustments.
+    // -----------------------------------------------------------------------
+    let rebookTrip = null;
+    let rebookSelectedFlightId = null;
+    let rebookAlternates = [];
+
+    function fmtFareDiff(diff) {
+      const n = Number(diff);
+      if (Math.abs(n) < 0.005) return { text: 'Same price', cls: 'same' };
+      return n > 0
+        ? { text: `+$${n.toFixed(2)}`, cls: 'up' }
+        : { text: `−$${Math.abs(n).toFixed(2)}`, cls: 'down' };
+    }
+
+    async function openRebookModal(trip) {
+      rebookTrip = trip;
+      rebookSelectedFlightId = null;
+      rebookAlternates = [];
+      const dep = new Date(trip.departure_time);
+      document.getElementById('rebookSummary').innerHTML = `
+        <div class="hint">Current flight</div>
+        <div class="route">${escapeHtml(trip.origin)} → ${escapeHtml(trip.destination)}${trip.seat_number ? ` <span class="hint">· Seat ${escapeHtml(trip.seat_number)}</span>` : ''}</div>
+        <div class="when">${dep.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</div>
+        <div class="fare">$${Number(trip.price_paid).toFixed(2)} <span class="priceUnit">paid</span></div>
+      `;
+      document.getElementById('rebookSubtitle').textContent = trip.return_flight_id
+        ? 'Pick another outbound flight on the same route. Your return flight stays the same.'
+        : 'Pick another flight on the same route.';
+      document.getElementById('rebookPickView').classList.remove('hidden');
+      document.getElementById('rebookDoneView').classList.add('hidden');
+      document.getElementById('rebookError').textContent = '';
+      const submitBtn = document.getElementById('rebookSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Change flight';
+      const listEl = document.getElementById('rebookAltList');
+      listEl.innerHTML = '<div class="tripsLoading">Finding other flights…</div>';
+      document.getElementById('rebookModal').classList.remove('hidden');
+
+      const { data, error } = await supabaseClient.rpc('get_alternate_flights', { p_reservation_id: trip.reservation_id });
+      if (rebookTrip !== trip) return; // closed or reopened while loading
+      if (error) {
+        listEl.innerHTML = '';
+        document.getElementById('rebookError').textContent = error.message || 'Could not load other flights. Please try again.';
+        console.error(error);
+        return;
+      }
+      rebookAlternates = data || [];
+      if (!rebookAlternates.length) {
+        listEl.innerHTML = `<div class="tripsEmpty">No other ${escapeHtml(trip.origin)} → ${escapeHtml(trip.destination)} flights have seats${trip.return_flight_id ? ' and arrive before your return flight' : ''}. Your current booking is unchanged.</div>`;
+        return;
+      }
+      listEl.innerHTML = rebookAlternates.map((f) => {
+        const d = fmtFareDiff(f.fare_difference);
+        const fdep = new Date(f.departure_time);
+        const farr = new Date(f.arrival_time);
+        const seats = Number(f.seats_available);
+        return `
+          <button type="button" class="altOption" role="option" aria-selected="false" data-flight-id="${f.flight_id}">
+            <div>
+              <div class="altWhen">${fdep.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</div>
+              <div class="altSeats">Arrives ${farr.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · ${seats} seat${seats === 1 ? '' : 's'} left</div>
+            </div>
+            <div class="altPrice">
+              <div class="altNew">$${Number(f.new_price).toFixed(2)}</div>
+              <div class="altDiff ${d.cls}">${d.text}</div>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function closeRebookModal() {
+      rebookTrip = null;
+      document.getElementById('rebookModal').classList.add('hidden');
+    }
+
+    document.getElementById('rebookAltList').addEventListener('click', (e) => {
+      const opt = e.target.closest('.altOption');
+      if (!opt) return;
+      rebookSelectedFlightId = opt.dataset.flightId;
+      document.querySelectorAll('#rebookAltList .altOption').forEach((el) => {
+        const on = el === opt;
+        el.classList.toggle('selected', on);
+        el.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      document.getElementById('rebookSubmitBtn').disabled = false;
+      document.getElementById('rebookError').textContent = '';
+    });
+
+    document.getElementById('rebookSubmitBtn').addEventListener('click', async () => {
+      if (!rebookTrip || !rebookSelectedFlightId) return;
+      const trip = rebookTrip;
+      const chosen = rebookAlternates.find((f) => f.flight_id === rebookSelectedFlightId);
+      const submitBtn = document.getElementById('rebookSubmitBtn');
+      const errorEl = document.getElementById('rebookError');
+      errorEl.textContent = '';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Changing…';
+
+      const { data, error } = await supabaseClient.rpc('rebook_reservation', {
+        p_reservation_id: trip.reservation_id,
+        p_new_flight_id: rebookSelectedFlightId,
+      });
+      if (error) {
+        // e.g. the last seat was taken a moment ago -- server messages are user-readable
+        errorEl.textContent = error.message || 'Could not change your flight. Please try again.';
+        console.error(error);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Change flight';
+        return;
+      }
+
+      const result = Array.isArray(data) ? data[0] : data;
+      await loadMyTrips();
+      const updated = lastTrips.find((t) => t.reservation_id === trip.reservation_id);
+      const newDep = new Date((updated || chosen).departure_time);
+      const diff = Number(result ? result.fare_difference : chosen.fare_difference);
+      const newPrice = Number(result ? result.new_price : chosen.new_price);
+
+      let seatLine;
+      if (!trip.seat_number) seatLine = '';
+      else if (updated && updated.seat_number === trip.seat_number) seatLine = `You kept seat ${escapeHtml(trip.seat_number)}.`;
+      else seatLine = `Seat ${escapeHtml(trip.seat_number)} was already taken on this flight, so no seat is assigned yet.`;
+
+      let priceLine;
+      if (Math.abs(diff) < 0.005) priceLine = `The price stays $${newPrice.toFixed(2)}.`;
+      else if (diff > 0) priceLine = `The new flight costs $${diff.toFixed(2)} more, for a total of $${newPrice.toFixed(2)}.`;
+      else priceLine = `The new flight costs $${Math.abs(diff).toFixed(2)} less, for a total of $${newPrice.toFixed(2)}.`;
+
+      document.getElementById('rebookDoneText').innerHTML = `
+        <strong>You're now on the ${newDep.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} flight.</strong><br>
+        ${priceLine} ${seatLine}
+      `;
+      document.getElementById('rebookPickView').classList.add('hidden');
+      document.getElementById('rebookDoneView').classList.remove('hidden');
+      document.getElementById('rebookDoneBtn').focus();
+    });
+
+    document.getElementById('rebookClose').addEventListener('click', closeRebookModal);
+    document.getElementById('rebookBackBtn').addEventListener('click', closeRebookModal);
+    document.getElementById('rebookDoneBtn').addEventListener('click', closeRebookModal);
+    document.getElementById('rebookModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('rebookModal')) closeRebookModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !document.getElementById('rebookModal').classList.contains('hidden')) closeRebookModal();
+    });
+
+    // -----------------------------------------------------------------------
     // S2-07 / PB-14: Admin cancellation controls + audit logging.
     // admin_cancel_reservation() is admin-only, requires a reason, releases
     // the seat(s), queues the passenger notification, and writes an
@@ -3634,6 +3848,7 @@
       document.getElementById('auditLogPanel').classList.add('hidden');
       document.getElementById('auditLogBody').innerHTML = '';
       closeAdminCancelModal();
+      closeRebookModal();
       loadMyTrips();
 
       // The Manager page has no logged-out fallback content (unlike Trips/
