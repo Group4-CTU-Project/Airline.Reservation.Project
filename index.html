@@ -501,6 +501,34 @@
   .managerPagination { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 18px; }
   .managerPagination .pageInfo { font-size: 0.85rem; color: var(--text-soft); }
 
+  /* ---- S2-07/PB-14: admin cancellation + audit log ---- */
+  .btn-danger { background: #fff; color: #B00020; border: 1px solid #F3B7B7; }
+  .btn-danger:hover { background: #FCE8E8; border-color: #B00020; }
+  .btn-danger-solid { background: #B00020; color: #fff; }
+  .btn-danger-solid:hover { background: #8A0019; }
+  .auditTable { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .auditTable th, .auditTable td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .auditTable th { color: var(--text-soft); font-weight: 700; font-size: 0.75rem; background: var(--bg); }
+  .auditTable tbody tr:last-child td { border-bottom: none; }
+  .auditTable td.when { white-space: nowrap; color: var(--text-soft); }
+  .auditTable .actor { font-weight: 700; color: var(--ink); }
+  .auditTable .reason { color: var(--text); max-width: 320px; }
+  .auditAction {
+    display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem;
+    font-weight: 800; white-space: nowrap;
+  }
+  .auditAction.cancel { background: #FCE8E8; color: #B00020; }
+  .auditAction.role { background: #FFF4E5; color: var(--gold-dark); }
+  .auditAction.other { background: #EEF0F3; color: var(--text-soft); }
+  .auditToolbar { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin-bottom: 14px; }
+  .auditToolbar label { display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; }
+  .auditToolbar select { padding: 10px; border: 1px solid var(--border); border-radius: 7px; font-family: inherit; background: #fff; }
+  #adminCancelReason {
+    width: 100%; min-height: 90px; padding: 10px; border: 1px solid var(--border); border-radius: 7px;
+    font-family: inherit; font-size: 0.92rem; resize: vertical; box-sizing: border-box;
+  }
+  #adminCancelReason:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+
   footer { padding: 32px 0 48px; text-align: center; color: var(--text-soft); font-size: 0.82rem; }
 
   /* ---- S1-06: Booking modal ---- */
@@ -1041,6 +1069,40 @@
             <button type="button" id="mgrNextBtn" class="btn btn-ghost">Next</button>
           </div>
         </div>
+
+        <!-- S2-07/PB-14: admin-only audit log. get_admin_audit_log() is
+             admin-gated server-side; hiding this panel is just UX. -->
+        <div class="panel panel-accent hidden" id="auditLogPanel" style="margin-top:28px; --panel-accent-color:#8A0019;">
+          <div class="sectionHead" style="margin-bottom:12px;">
+            <h3 style="margin:0;">Audit log</h3>
+            <p style="margin:4px 0 0; font-size:0.85rem;">Every admin cancellation and role change, newest first. Entries can't be edited or deleted.</p>
+          </div>
+          <div class="auditToolbar">
+            <div>
+              <label for="auditActionFilter">Show</label>
+              <select id="auditActionFilter">
+                <option value="">All actions</option>
+                <option value="admin_cancel_reservation">Cancellations</option>
+                <option value="set_user_role">Role changes</option>
+              </select>
+            </div>
+            <button type="button" id="auditRefreshBtn" class="btn btn-ghost">Refresh</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="auditTable">
+              <thead>
+                <tr><th>When</th><th>By</th><th>Action</th><th>Affected</th><th>Details</th></tr>
+              </thead>
+              <tbody id="auditLogBody"></tbody>
+            </table>
+          </div>
+          <div class="error" id="auditLogError"></div>
+          <div class="managerPagination hidden" id="auditPagination">
+            <button type="button" id="auditPrevBtn" class="btn btn-ghost">Previous</button>
+            <span class="pageInfo" id="auditPageInfo"></span>
+            <button type="button" id="auditNextBtn" class="btn btn-ghost">Next</button>
+          </div>
+        </div>
       </section>
     </div>
   </div>
@@ -1136,6 +1198,25 @@
       <button type="button" id="ticketClose" class="modalClose" aria-label="Close">&times;</button>
       <div class="ticket" id="ticketContent"></div>
       <button type="button" id="ticketPrintBtn" class="btn btn-primary btn-block" style="margin-top:16px;">Print / Save as PDF</button>
+    </div>
+  </div>
+
+  <!-- S2-07/PB-14: admin cancellation needs a reason (enforced server-side too) -->
+  <div id="adminCancelModal" class="modalOverlay hidden" role="dialog" aria-modal="true" aria-labelledby="adminCancelTitle">
+    <div class="modalCard">
+      <button type="button" id="adminCancelClose" class="modalClose" aria-label="Close">&times;</button>
+      <h2 id="adminCancelTitle" style="margin:0 0 4px;">Cancel this booking</h2>
+      <p class="hint" style="margin:0;">Their seat is released and a cancellation notice is queued for the passenger.</p>
+      <div class="bookingSummary" id="adminCancelSummary"></div>
+      <form id="adminCancelForm">
+        <label for="adminCancelReason" style="display:block; font-weight:700; font-size:0.85rem; margin-bottom:6px;">Reason (saved to the audit log)</label>
+        <textarea id="adminCancelReason" maxlength="500" required placeholder="e.g. Flight cancelled due to weather"></textarea>
+        <div class="error" id="adminCancelError"></div>
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button type="button" id="adminCancelBackBtn" class="btn btn-ghost" style="flex:1;">Keep booking</button>
+          <button type="submit" id="adminCancelSubmitBtn" class="btn btn-danger-solid" style="flex:1;">Cancel booking</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -2639,6 +2720,8 @@
       document.getElementById('managerSectionWrap').classList.toggle('hidden', !canViewManagerDashboard);
       document.getElementById('mgrRolePanel').classList.toggle('hidden', !canSeeRolePanel);
       document.getElementById('mgrRevenuePanel').classList.toggle('hidden', !canSeeRevenuePanel);
+      // S2-07/PB-14: audit log is admin-only (get_admin_audit_log() enforces it).
+      document.getElementById('auditLogPanel').classList.toggle('hidden', currentUserRole !== 'admin');
 
       await refreshPaymentOnFile();
       await loadMyTrips();
@@ -2917,8 +3000,10 @@
     function renderManagerReservationCard(trip) {
       // Reuses renderTripCard's layout/markup shape (statusPill, route, fare,
       // ticket button) since get_all_reservations returns the same field
-      // names as get_my_reservations — only the actions differ (no cancel
-      // button here; cancelling is a customer/My Trips action, not a manager one).
+      // names as get_my_reservations — only the actions differ. S2-07/PB-14:
+      // admins also get a Cancel booking button on pending/confirmed rows
+      // (admin_cancel_reservation() is admin-only server-side; managers see
+      // the dashboard but can't cancel).
       const dep = new Date(trip.departure_time);
       const statusKey = (trip.status || '').toLowerCase();
       const statusLabel = STATUS_LABELS[statusKey] || trip.status;
@@ -2928,6 +3013,9 @@
         : (statusKey === 'pending' ? 'Payment not completed' : '');
       const ticketBtn = statusKey === 'confirmed'
         ? `<button type="button" class="btn btn-primary viewManagerTicketBtn" data-reservation-id="${trip.reservation_id}" style="margin-top:10px; font-size:0.8rem; padding:7px 14px;">View ticket</button>`
+        : '';
+      const adminCancelBtn = (currentUserRole === 'admin' && (statusKey === 'pending' || statusKey === 'confirmed'))
+        ? `<button type="button" class="btn btn-danger adminCancelBtn" data-reservation-id="${trip.reservation_id}" style="margin-top:10px; margin-left:6px; font-size:0.8rem; padding:7px 14px;">Cancel booking</button>`
         : '';
 
       return `
@@ -2946,6 +3034,7 @@
             <div class="fare">$${Number(trip.price_paid).toFixed(2)}</div>
             ${paymentLine ? `<div class="hint" style="margin-top:6px;">${paymentLine}</div>` : ''}
             ${ticketBtn}
+            ${adminCancelBtn}
           </div>
         </div>
       `;
@@ -3013,6 +3102,7 @@
     async function loadManagerDashboard() {
       const tasks = [loadManagerStatTiles(), loadManagerReservations()];
       if (currentUserRole === 'admin' || currentUserRole === 'manager') tasks.push(loadRevenueDashboard());
+      if (currentUserRole === 'admin') tasks.push(loadAuditLog());
       await Promise.all(tasks);
     }
 
@@ -3323,10 +3413,185 @@
     });
 
     document.getElementById('managerReservationsList').addEventListener('click', (e) => {
+      const cancelBtn = e.target.closest('.adminCancelBtn');
+      if (cancelBtn) {
+        const trip = lastManagerReservations.find((t) => t.reservation_id === cancelBtn.dataset.reservationId);
+        if (trip) openAdminCancelModal(trip);
+        return;
+      }
       const viewBtn = e.target.closest('.viewManagerTicketBtn');
       if (!viewBtn) return;
       const trip = lastManagerReservations.find((t) => t.reservation_id === viewBtn.dataset.reservationId);
       if (trip) openTicketModal(tripToTicketData(trip));
+    });
+
+    // -----------------------------------------------------------------------
+    // S2-07 / PB-14: Admin cancellation controls + audit logging.
+    // admin_cancel_reservation() is admin-only, requires a reason, releases
+    // the seat(s), queues the passenger notification, and writes an
+    // admin_audit_log row -- all in one transaction server-side (see
+    // 20260926000000_s2_07_admin_audit_hardening.sql). Nothing here is the
+    // security boundary; it's the UI for it.
+    // -----------------------------------------------------------------------
+
+    // Audit rows contain text typed by other people (reasons, passenger and
+    // account names), so escape everything before it goes into innerHTML.
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+      ));
+    }
+
+    let adminCancelTarget = null;
+
+    function openAdminCancelModal(trip) {
+      adminCancelTarget = trip;
+      const dep = new Date(trip.departure_time);
+      document.getElementById('adminCancelSummary').innerHTML = `
+        <div class="route">${escapeHtml(trip.origin)} → ${escapeHtml(trip.destination)}${trip.return_origin ? ' (round trip)' : ''}</div>
+        <div class="when">${dep.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</div>
+        <div class="when">${escapeHtml(trip.passenger_name)} · #${trip.reservation_id.slice(0, 8).toUpperCase()}</div>
+      `;
+      document.getElementById('adminCancelReason').value = '';
+      document.getElementById('adminCancelError').textContent = '';
+      const submitBtn = document.getElementById('adminCancelSubmitBtn');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Cancel booking';
+      document.getElementById('adminCancelModal').classList.remove('hidden');
+      document.getElementById('adminCancelReason').focus();
+    }
+
+    function closeAdminCancelModal() {
+      adminCancelTarget = null;
+      document.getElementById('adminCancelModal').classList.add('hidden');
+    }
+
+    document.getElementById('adminCancelClose').addEventListener('click', closeAdminCancelModal);
+    document.getElementById('adminCancelBackBtn').addEventListener('click', closeAdminCancelModal);
+    document.getElementById('adminCancelModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('adminCancelModal')) closeAdminCancelModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !document.getElementById('adminCancelModal').classList.contains('hidden')) closeAdminCancelModal();
+    });
+
+    document.getElementById('adminCancelForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!adminCancelTarget) return;
+      const errorEl = document.getElementById('adminCancelError');
+      const submitBtn = document.getElementById('adminCancelSubmitBtn');
+      const reason = document.getElementById('adminCancelReason').value.trim();
+      errorEl.textContent = '';
+
+      if (reason.length < 3) {
+        errorEl.textContent = 'Enter a reason of at least 3 characters. It goes in the audit log.';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Cancelling…';
+      const { error } = await supabaseClient.rpc('admin_cancel_reservation', {
+        p_reservation_id: adminCancelTarget.reservation_id,
+        p_reason: reason,
+      });
+      if (error) {
+        // Server messages here are written for people (e.g. "Only pending or
+        // confirmed reservations can be cancelled"), so show them as-is.
+        errorEl.textContent = error.message || 'Could not cancel this booking.';
+        console.error(error);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Cancel booking';
+        return;
+      }
+      closeAdminCancelModal();
+      const tasks = [loadManagerStatTiles(), loadManagerReservations(), loadAuditLog()];
+      if (!document.getElementById('mgrRevenuePanel').classList.contains('hidden')) tasks.push(loadRevenueDashboard());
+      await Promise.all(tasks);
+    });
+
+    const AUDIT_PAGE_SIZE = 15;
+    let auditOffset = 0;
+
+    function describeAuditAction(row) {
+      if (row.action_type === 'admin_cancel_reservation') return { label: 'Cancelled booking', cls: 'cancel' };
+      if (row.action_type === 'set_user_role') return { label: 'Changed role', cls: 'role' };
+      return { label: row.action_type, cls: 'other' };
+    }
+
+    function describeAuditDetails(row) {
+      const d = row.details_json || {};
+      if (row.action_type === 'set_user_role') {
+        return `${escapeHtml(d.old_role || '?')} → <strong>${escapeHtml(d.new_role || '?')}</strong>`;
+      }
+      const parts = [];
+      if (row.reason_text) parts.push(`“${escapeHtml(row.reason_text)}”`);
+      if (d.previous_status) parts.push(`<span class="hint">Was ${escapeHtml(STATUS_LABELS[d.previous_status] || d.previous_status)}</span>`);
+      return parts.join('<br>') || '<span class="hint">No details</span>';
+    }
+
+    async function loadAuditLog() {
+      const bodyEl = document.getElementById('auditLogBody');
+      const errorEl = document.getElementById('auditLogError');
+      const paginationEl = document.getElementById('auditPagination');
+      if (currentUserRole !== 'admin') return;
+      errorEl.textContent = '';
+      bodyEl.innerHTML = '<tr><td colspan="5" class="tripsLoading">Loading audit log…</td></tr>';
+      paginationEl.classList.add('hidden');
+
+      const { data, error } = await supabaseClient.rpc('get_admin_audit_log', {
+        p_action: document.getElementById('auditActionFilter').value || null,
+        p_limit: AUDIT_PAGE_SIZE,
+        p_offset: auditOffset,
+      });
+      if (error) {
+        bodyEl.innerHTML = '';
+        errorEl.textContent = 'Could not load the audit log. Refresh to try again.';
+        console.error(error);
+        return;
+      }
+
+      const rows = data || [];
+      if (!rows.length) {
+        if (auditOffset > 0) { auditOffset = 0; return loadAuditLog(); }
+        bodyEl.innerHTML = '<tr><td colspan="5" class="tripsEmpty">No admin actions recorded yet. Cancellations and role changes will show up here.</td></tr>';
+        return;
+      }
+
+      bodyEl.innerHTML = rows.map((row) => {
+        const action = describeAuditAction(row);
+        const when = new Date(row.logged_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+        const target = row.target_reservation_id
+          ? `${escapeHtml(row.target_name || 'Passenger')}<div class="hint">#${row.target_reservation_id.slice(0, 8).toUpperCase()}</div>`
+          : escapeHtml(row.target_name || '—');
+        return `
+          <tr>
+            <td class="when">${when}</td>
+            <td><span class="actor">${escapeHtml(row.actor_name || row.actor_email || 'Unknown')}</span></td>
+            <td><span class="auditAction ${action.cls}">${escapeHtml(action.label)}</span></td>
+            <td>${target}</td>
+            <td class="reason">${describeAuditDetails(row)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const total = Number(rows[0].total_count);
+      const page = Math.floor(auditOffset / AUDIT_PAGE_SIZE) + 1;
+      const pages = Math.max(1, Math.ceil(total / AUDIT_PAGE_SIZE));
+      document.getElementById('auditPageInfo').textContent = `Page ${page} of ${pages}`;
+      document.getElementById('auditPrevBtn').disabled = auditOffset === 0;
+      document.getElementById('auditNextBtn').disabled = auditOffset + rows.length >= total;
+      paginationEl.classList.toggle('hidden', pages <= 1);
+    }
+
+    document.getElementById('auditActionFilter').addEventListener('change', () => { auditOffset = 0; loadAuditLog(); });
+    document.getElementById('auditRefreshBtn').addEventListener('click', () => loadAuditLog());
+    document.getElementById('auditPrevBtn').addEventListener('click', () => {
+      auditOffset = Math.max(0, auditOffset - AUDIT_PAGE_SIZE);
+      loadAuditLog();
+    });
+    document.getElementById('auditNextBtn').addEventListener('click', () => {
+      auditOffset += AUDIT_PAGE_SIZE;
+      loadAuditLog();
     });
 
     // ---- S1-08: shared card helpers ----
@@ -3366,6 +3631,9 @@
       document.getElementById('navMobileLogoutItem').classList.add('hidden');
       document.getElementById('managerSectionWrap').classList.add('hidden');
       document.getElementById('mgrRolePanel').classList.add('hidden');
+      document.getElementById('auditLogPanel').classList.add('hidden');
+      document.getElementById('auditLogBody').innerHTML = '';
+      closeAdminCancelModal();
       loadMyTrips();
 
       // The Manager page has no logged-out fallback content (unlike Trips/
